@@ -1,44 +1,280 @@
-do local _0xA = string.char local _0xB = string.byte local _0xC =
-string.sub local _0xD = table.concat local _0xE = loadstring or load
+-- Serviços
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 
-    local function _0xF(data, key)
-        local result = {}
-        for i = 1, #data do
-            local k = key:byte(((i - 1) % #key) + 1)
-            result[i] = _0xA(bit32.bxor(_0xB(data, i), k))
-        end
-        return _0xD(result)
-    end
+local LocalPlayer = Players.LocalPlayer
+local selectedPlayerName = nil
 
-    local _payload = "Hh4dHh8ZGR4cHh4dHh8ZGR4c"
-    local _key = "K3Yx"
-
-    local _decoded = _0xF(_payload, _key)
-
-    local _real = [[
+-- Carregar Library
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/silvaahub/anonymus-hub-/refs/heads/main/Library%20Amarela.txt"))()
 
 workspace.FallenPartsDestroyHeight = -math.huge
 
-local p=game:GetService(“Players”) local lp=p.LocalPlayer local function
-g(n) for _,v in ipairs(p:GetPlayers()) do if v~=lp and v.Name==n then
-return v end end end
+-- Criar Janela
+local Window = Library:MakeWindow({
+    Title = "anonymus Hub | Brookhaven",
+    SubTitle = "By: silvadev",
+    LoadText = "Carregando anonymus Hub...",
+    Flags = "anonymushub_Brookhaven",
+    Size = UDim2.fromScale(0.55, 0.65)
+})
 
-local function f(t) if not t then return end local c=lp.Character or
-lp.CharacterAdded:Wait() local hrp=c:WaitForChild(“HumanoidRootPart”)
-local ball=Instance.new(“Part”) ball.Size=Vector3.new(5,5,5)
-ball.CanCollide=false ball.Massless=true ball.Parent=workspace local
-bv=Instance.new(“BodyVelocity”) bv.Velocity=Vector3.new(9e8,9e8,9e8)
-bv.MaxForce=Vector3.new(math.huge,math.huge,math.huge) bv.Parent=ball
-repeat if t.Character and t.Character:FindFirstChild(“HumanoidRootPart”)
-then ball.CFrame=t.Character.HumanoidRootPart.CFrame end task.wait()
-until not t.Parent ball:Destroy() end
+-- Botão minimizar
+Window:AddMinimizeButton({
+    Button = {
+        Image = "rbxassetid://99919616573238",
+        BackgroundTransparency = 1
+    },
+    Corner = { CornerRadius = UDim.new(1, 0) }
+})
 
-_G.__X=function(n) f(g(n)) end ]]
+-- Criar Tab
+local Troll = Window:MakeTab({
+    Title = "| Troll",
+    Icon = "rbxassetid://15309138473"
+})
 
-    local _chunk = _real
-    local _exec = _0xE(_chunk)
-    if _exec then
-        _exec()
+------------------------------------------------------------------
+-- Função para pegar lista de jogadores
+------------------------------------------------------------------
+
+local function getPlayerList()
+    local playerNames = {}
+
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            table.insert(playerNames, player.Name)
+        end
     end
 
+    return playerNames
 end
+
+------------------------------------------------------------------
+-- Dropdown de jogadores
+------------------------------------------------------------------
+
+local playerDropdown = Troll:AddDropdown({
+    Name = "Select Player",
+    Options = getPlayerList(),
+    Default = "",
+    Callback = function(value)
+        selectedPlayerName = value
+        print("Selected player:", value)
+    end
+})
+
+------------------------------------------------------------------
+-- Botão atualizar lista
+------------------------------------------------------------------
+
+Troll:AddButton({
+    Name = "Refresh Player List",
+    Callback = function()
+        local newList = getPlayerList()
+        playerDropdown:Set(newList)
+
+        if selectedPlayerName and not Players:FindFirstChild(selectedPlayerName) then
+            selectedPlayerName = nil
+            playerDropdown:SetValue("")
+        end
+    end
+})
+
+local function FlingBall(target)
+
+    local players = game:GetService("Players")
+    local player = players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoid = character:WaitForChild("Humanoid")
+    local hrp = character:WaitForChild("HumanoidRootPart")
+    local backpack = player:WaitForChild("Backpack")
+    local ServerBalls = workspace.WorkspaceCom:WaitForChild("001_SoccerBalls")
+
+    local function GetBall()
+        if not backpack:FindFirstChild("SoccerBall") then
+            game:GetService("ReplicatedStorage").RE:FindFirstChild("1Too1l"):InvokeServer("PickingTools", "SoccerBall")
+        end
+        repeat task.wait() until backpack:FindFirstChild("SoccerBall")
+        backpack.SoccerBall.Parent = character
+        repeat task.wait() until ServerBalls:FindFirstChild("Soccer" .. player.Name)
+        character.SoccerBall.Parent = backpack
+        return ServerBalls:FindFirstChild("Soccer" .. player.Name)
+    end
+
+    local Ball = ServerBalls:FindFirstChild("Soccer" .. player.Name) or GetBall()
+    Ball.CanCollide = false
+    Ball.Massless = true
+    Ball.CustomPhysicalProperties = PhysicalProperties.new(0.0001, 0, 0)
+
+    if target ~= player then
+        local tchar = target.Character
+        if tchar and tchar:FindFirstChild("HumanoidRootPart") and tchar:FindFirstChild("Humanoid") then
+            local troot = tchar.HumanoidRootPart
+            local thum = tchar.Humanoid
+
+            if Ball:FindFirstChildWhichIsA("BodyVelocity") then
+                Ball:FindFirstChildWhichIsA("BodyVelocity"):Destroy()
+            end
+
+            local bv = Instance.new("BodyVelocity")
+            bv.Name = "FlingPower"
+            bv.Velocity = Vector3.new(9999999e8, 999999e8, 999999e8)
+            bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+            bv.P = 99999999e900
+            bv.Parent = Ball
+
+            workspace.CurrentCamera.CameraSubject = thum
+            local StartTime = os.time()
+            repeat
+                if troot.Velocity.Magnitude > 0 then
+                -- Calculate adjusted position based on target's velocity
+                local pos_x = troot.Position.X + (troot.Velocity.X /2.5)
+                local pos_y = troot.Position.X - (troot.Velocity.Y / 2.5)
+                local pos_z = troot.Position.X + (troot.Velocity.Z / 2.5)
+
+                -- Position the ball directly at the adjusted position
+                local position = Vector3.new(pos_x, pos_y, pos_z)
+                Ball.CFrame = CFrame.new(position)
+                Ball.Orientation += Vector3.new(45, 60, 30)
+else
+for i, v in pairs(tchar:GetChildren()) do
+if v:IsA("BasePart") and v.CanCollide and not v.Anchored then
+Ball.CFrame = v.CFrame
+task.wait(1/6000)
+end
+end
+end
+                task.wait(1/6000)
+            until troot.Velocity.Magnitude > 1000 or thum.Health <= 0 or not tchar:IsDescendantOf(workspace) or target.Parent ~= players
+            workspace.CurrentCamera.CameraSubject = humanoid
+        end
+    end
+end
+
+Troll:AddButton({
+    Name = "Fling Ball",
+    Callback = function()
+        FlingBall(game:GetService("Players")[selectedPlayerName])
+    end
+})
+
+local nukeFlashEnabled = false
+local nukeFlashTrack = nil
+local flashRigidTrack = nil
+local savedNukeFlashBody = {}
+
+local function stopFlashAnimations()
+    if flashRigidTrack then
+        pcall(function()
+            flashRigidTrack:Stop()
+            flashRigidTrack:Destroy()
+        end)
+        flashRigidTrack = nil
+    end
+    
+    if nukeFlashTrack then
+        pcall(function()
+            nukeFlashTrack:Stop()
+            nukeFlashTrack:Destroy()
+        end)
+        nukeFlashTrack = nil
+    end
+end
+
+Troll:AddToggle({
+    Name = "Nuke FlashBack",
+    Default = false,
+    Callback = function(value)
+        nukeFlashEnabled = value
+        
+        if value then
+            local player = game.Players.LocalPlayer
+            local character = player.Character
+            
+            if character then
+                local humanoid = character:FindFirstChildOfClass("Humanoid")
+                if humanoid then
+                    local description = humanoid:GetAppliedDescription()
+                    
+                    savedNukeFlashBody = {
+                        Torso = description.Torso,
+                        RightArm = description.RightArm,
+                        LeftArm = description.LeftArm,
+                        RightLeg = description.RightLeg,
+                        LeftLeg = description.LeftLeg,
+                        Head = description.Head
+                    }
+                    
+                    task.wait(0.2)
+                    
+                    local args = {
+                        [1] = 123402086843885,
+                        [2] = 100839513065432,
+                        [3] = 78300682916056,
+                        [4] = 86276701020724,
+                        [5] = 78409653958165,
+                        [6] = 15093053680
+                    }
+                    
+                    pcall(function()
+                        game:GetService("ReplicatedStorage").Remotes.ChangeCharacterBody:InvokeServer(args)
+                    end)
+                    
+                    task.wait(0.3)
+                    
+                    local newAnim = Instance.new("Animation")
+                    newAnim.AnimationId = "rbxassetid://70883871260184"
+                    
+                    nukeFlashTrack = humanoid:LoadAnimation(newAnim)
+                    nukeFlashTrack.Priority = Enum.AnimationPriority.Action4
+                    nukeFlashTrack:Play(0.1, 1, 1)
+                    
+                    task.wait(0.1)
+                    nukeFlashTrack:AdjustSpeed(5)
+                    
+                    task.wait(0.3)
+                    
+                    local plankAnim = Instance.new("Animation")
+                    plankAnim.AnimationId = "rbxassetid://3695333486"
+                    flashRigidTrack = humanoid:LoadAnimation(plankAnim)
+                    flashRigidTrack.Priority = Enum.AnimationPriority.Movement
+                    flashRigidTrack:Play(0.1, 1, 0)
+                end
+            end
+        else
+            stopFlashAnimations()
+            
+            task.wait(0.2)
+            
+            if next(savedNukeFlashBody) then
+                local player = game.Players.LocalPlayer
+                local character = player.Character
+                
+                if character then
+                    local humanoid = character:FindFirstChildOfClass("Humanoid")
+                    if humanoid then
+                        local restoreBody = {
+                            [1] = savedNukeFlashBody.Torso,
+                            [2] = savedNukeFlashBody.RightArm,
+                            [3] = savedNukeFlashBody.LeftArm,
+                            [4] = savedNukeFlashBody.RightLeg,
+                            [5] = savedNukeFlashBody.LeftLeg,
+                            [6] = savedNukeFlashBody.Head
+                        }
+                        
+                        local args = {
+                            [1] = restoreBody
+                        }
+                        
+                        pcall(function()
+                            game:GetService("ReplicatedStorage").Remotes.ChangeCharacterBody:InvokeServer(unpack(args))
+                        end)
+                        
+                        savedNukeFlashBody = {}
+                    end
+                end
+            end
+        end
+    end
+})

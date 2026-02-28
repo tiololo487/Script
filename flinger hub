@@ -277,4 +277,16 @@ Troll:AddToggle({
             end
         end
     end
+    local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local hrp = character:WaitForChild("HumanoidRootPart")
+
+local rotationSpeed = 460 -- graus por segundo
+
+RunService.RenderStepped:Connect(function(deltaTime)
+    hrp.CFrame = hrp.CFrame * CFrame.Angles(0, math.rad(rotationSpeed * deltaTime), 0)
+end)
 })
