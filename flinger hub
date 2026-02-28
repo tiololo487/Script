@@ -163,6 +163,7 @@ local nukeFlashEnabled = false
 local nukeFlashTrack = nil
 local flashRigidTrack = nil
 local savedNukeFlashBody = {}
+local spinConnection = nil
 
 local function stopFlashAnimations()
     if flashRigidTrack then
@@ -182,6 +183,26 @@ local function stopFlashAnimations()
     end
 end
 
+local function startSpin()
+    local player = game.Players.LocalPlayer
+    local character = player.Character
+    if not character then return end
+    
+    local hrp = character:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+
+    spinConnection = RunService.RenderStepped:Connect(function(dt)
+        hrp.CFrame = hrp.CFrame * CFrame.Angles(0, math.rad(460 * dt), 0)
+    end)
+end
+
+local function stopSpin()
+    if spinConnection then
+        spinConnection:Disconnect()
+        spinConnection = nil
+    end
+end
+
 Troll:AddToggle({
     Name = "Nuke FlashBack",
     Default = false,
@@ -189,6 +210,8 @@ Troll:AddToggle({
         nukeFlashEnabled = value
         
         if value then
+            startSpin()
+
             local player = game.Players.LocalPlayer
             local character = player.Character
             
@@ -243,6 +266,7 @@ Troll:AddToggle({
                 end
             end
         else
+            stopSpin()
             stopFlashAnimations()
             
             task.wait(0.2)
@@ -263,12 +287,8 @@ Troll:AddToggle({
                             [6] = savedNukeFlashBody.Head
                         }
                         
-                        local args = {
-                            [1] = restoreBody
-                        }
-                        
                         pcall(function()
-                            game:GetService("ReplicatedStorage").Remotes.ChangeCharacterBody:InvokeServer(unpack(args))
+                            game:GetService("ReplicatedStorage").Remotes.ChangeCharacterBody:InvokeServer(restoreBody)
                         end)
                         
                         savedNukeFlashBody = {}
@@ -277,15 +297,4 @@ Troll:AddToggle({
             end
         end
     end
-    local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-
-local player = Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local hrp = character:WaitForChild("HumanoidRootPart")
-
-local rotationSpeed = 460 -- graus por segundo
-
-RunService.RenderStepped:Connect(function(deltaTime)
-    hrp.CFrame = hrp.CFrame * CFrame.Angles(0, math.rad(rotationSpeed * deltaTime), 0)
-end)
+})
