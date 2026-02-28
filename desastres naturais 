@@ -1,0 +1,8 @@
+local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/main.lua"))()
+
+local Window = Libary:MakeWindow({
+    Title = "tiololo Hub | desatres naturais 🏡☄️",
+    SubTitle = "by: just living",
+    LoadText = "Carregando  Hub",
+    Flags = "tiololoHub_Desatres_naturais"
+})
