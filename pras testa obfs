@@ -1,0 +1,44 @@
+do local _0xA = string.char local _0xB = string.byte local _0xC =
+string.sub local _0xD = table.concat local _0xE = loadstring or load
+
+    local function _0xF(data, key)
+        local result = {}
+        for i = 1, #data do
+            local k = key:byte(((i - 1) % #key) + 1)
+            result[i] = _0xA(bit32.bxor(_0xB(data, i), k))
+        end
+        return _0xD(result)
+    end
+
+    local _payload = "Hh4dHh8ZGR4cHh4dHh8ZGR4c"
+    local _key = "K3Yx"
+
+    local _decoded = _0xF(_payload, _key)
+
+    local _real = [[
+
+workspace.FallenPartsDestroyHeight = -math.huge
+
+local p=game:GetService(“Players”) local lp=p.LocalPlayer local function
+g(n) for _,v in ipairs(p:GetPlayers()) do if v~=lp and v.Name==n then
+return v end end end
+
+local function f(t) if not t then return end local c=lp.Character or
+lp.CharacterAdded:Wait() local hrp=c:WaitForChild(“HumanoidRootPart”)
+local ball=Instance.new(“Part”) ball.Size=Vector3.new(5,5,5)
+ball.CanCollide=false ball.Massless=true ball.Parent=workspace local
+bv=Instance.new(“BodyVelocity”) bv.Velocity=Vector3.new(9e8,9e8,9e8)
+bv.MaxForce=Vector3.new(math.huge,math.huge,math.huge) bv.Parent=ball
+repeat if t.Character and t.Character:FindFirstChild(“HumanoidRootPart”)
+then ball.CFrame=t.Character.HumanoidRootPart.CFrame end task.wait()
+until not t.Parent ball:Destroy() end
+
+_G.__X=function(n) f(g(n)) end ]]
+
+    local _chunk = _real
+    local _exec = _0xE(_chunk)
+    if _exec then
+        _exec()
+    end
+
+end
