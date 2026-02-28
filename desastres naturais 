@@ -10,21 +10,28 @@ local TrollTab = Window:Tab({
     Name = "Troll"
 })
 
-local player = game.Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local hrp = character:WaitForChild("HumanoidRootPart")
-local leftArm = character:WaitForChild("LeftUpperArm")
-
-leftArm.CanCollide = false
-leftArm.Anchored = true
-
 local RunService = game:GetService("RunService")
+local player = game.Players.LocalPlayer
+
 local radius = 2
-local speed = 800
+local speed = 100
 local angle = 0
 local conn
 
+local function getCharacterParts()
+    local character = player.Character or player.CharacterAdded:Wait()
+    local hrp = character:WaitForChild("HumanoidRootPart")
+    local leftArm = character:FindFirstChild("LeftUpperArm") or character:FindFirstChild("Left Arm")
+    return character, hrp, leftArm
+end
+
 local function LeftArmOrbit(active)
+    local character, hrp, leftArm = getCharacterParts()
+    if not leftArm or not hrp then return end
+
+    leftArm.CanCollide = false
+    leftArm.Anchored = true
+
     if active then
         conn = RunService.RenderStepped:Connect(function(dt)
             angle = angle + math.rad(speed) * dt
@@ -35,10 +42,12 @@ local function LeftArmOrbit(active)
     else
         if conn then conn:Disconnect() end
         leftArm.CFrame = hrp.CFrame * CFrame.new(-1.5, 0, 0)
+        leftArm.Anchored = false
+        leftArm.CanCollide = true
     end
 end
 
-Troll:AddToggle({
+TrollTab:AddToggle({
     Name = "Left Arm Orbit",
     Default = false,
     Callback = function(value)
