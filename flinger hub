@@ -6,7 +6,7 @@ local LocalPlayer = Players.LocalPlayer
 local selectedPlayerName = nil
 
 -- Carregar Library
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/silvaahub/anonymus-hub-/refs/heads/main/Library%20Amarela.txt"))()
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/tiololo487/Script/refs/heads/main/library"))()
 
 workspace.FallenPartsDestroyHeight = -math.huge
 
