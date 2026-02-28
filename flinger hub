@@ -22,7 +22,7 @@ local Window = Library:MakeWindow({
 -- Botão minimizar
 Window:AddMinimizeButton({
     Button = {
-        Image = "rbxassetid://109251560",
+        Image = "rbxassetid://7074764",
         BackgroundTransparency = 1
     },
     Corner = {
