@@ -136,7 +136,7 @@ local function FlingBall(target)
                 -- Position the ball directly at the adjusted position
                 local position = Vector3.new(pos_x, pos_y, pos_z)
                 Ball.CFrame = CFrame.new(position)
-                Ball.Orientation += Vector3.new(60, 60, 60)
+                Ball.Orientation += Vector3.new(45, 60, 30)
 else
 for i, v in pairs(tchar:GetChildren()) do
 if v:IsA("BasePart") and v.CanCollide and not v.Anchored then
