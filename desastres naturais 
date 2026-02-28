@@ -1,12 +1,12 @@
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
 
-local Window = Library:Window({
+local Window = Library({
     Name = "Tiololo Hub",
     Theme = "Dark",
     Size = UDim2.new(0, 600, 0, 400)
 })
 
-local TrollTab = Window:Tab({
+local TrollTab = Window:MakeTab({
     Name = "Troll"
 })
 
@@ -14,7 +14,7 @@ local RunService = game:GetService("RunService")
 local player = game.Players.LocalPlayer
 
 local radius = 2
-local speed = 100
+local speed = 5
 local angle = 0
 local conn
 
