@@ -1,8 +1,47 @@
-local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/main.lua"))()
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
 
-local Window = Libary:MakeWindow({
-    Title = "tiololo Hub | desatres naturais 🏡☄️",
-    SubTitle = "by: just living",
-    LoadText = "Carregando  Hub",
-    Flags = "tiololoHub_Desatres_naturais"
+local Window = Library:Window({
+    Name = "Tiololo Hub",
+    Theme = "Dark",
+    Size = UDim2.new(0, 600, 0, 400)
+})
+
+local TrollTab = Window:Tab({
+    Name = "Troll"
+})
+
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local hrp = character:WaitForChild("HumanoidRootPart")
+local leftArm = character:WaitForChild("LeftUpperArm")
+
+leftArm.CanCollide = false
+leftArm.Anchored = true
+
+local RunService = game:GetService("RunService")
+local radius = 2
+local speed = 800
+local angle = 0
+local conn
+
+local function LeftArmOrbit(active)
+    if active then
+        conn = RunService.RenderStepped:Connect(function(dt)
+            angle = angle + math.rad(speed) * dt
+            local x = math.cos(angle) * radius
+            local z = math.sin(angle) * radius
+            leftArm.CFrame = hrp.CFrame * CFrame.new(x, 0, z) * CFrame.Angles(0, angle, 0)
+        end)
+    else
+        if conn then conn:Disconnect() end
+        leftArm.CFrame = hrp.CFrame * CFrame.new(-1.5, 0, 0)
+    end
+end
+
+Troll:AddToggle({
+    Name = "Left Arm Orbit",
+    Default = false,
+    Callback = function(value)
+        LeftArmOrbit(value)
+    end
 })
