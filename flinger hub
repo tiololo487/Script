@@ -289,4 +289,3 @@ local rotationSpeed = 460 -- graus por segundo
 RunService.RenderStepped:Connect(function(deltaTime)
     hrp.CFrame = hrp.CFrame * CFrame.Angles(0, math.rad(rotationSpeed * deltaTime), 0)
 end)
-})
