@@ -6,7 +6,7 @@ local LocalPlayer = Players.LocalPlayer
 local selectedPlayerName = nil
 
 -- Carregar Library
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/silvaahub/anonymus-hub-/refs/heads/main/Library%20Amarela.txt"))()
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/tiololo487/Script/refs/heads/main/library"))()
 
 workspace.FallenPartsDestroyHeight = -math.huge
 
@@ -19,13 +19,9 @@ local Window = Library:MakeWindow({
     Size = UDim2.fromScale(0.55, 0.65)
 })
 
--- Botão minimizar
 Window:AddMinimizeButton({
-    Button = {
-        Image = "rbxassetid://99919616573238",
-        BackgroundTransparency = 1
-    },
-    Corner = { CornerRadius = UDim.new(1, 0) }
+    Button = { Image = "rbxassetid://2483186", BackgroundTransparency = 0 },
+    Corner = { CornerRadius = UDim.new(35, 1) },
 })
 
 -- Criar Tab
@@ -81,83 +77,167 @@ Troll:AddButton({
     end
 })
 
-local function FlingBall(target)
-
-    local players = game:GetService("Players")
-    local player = players.LocalPlayer
-    local character = player.Character or player.CharacterAdded:Wait()
-    local humanoid = character:WaitForChild("Humanoid")
-    local hrp = character:WaitForChild("HumanoidRootPart")
+-- Fling Ball Melhorado 2026 - Mobile Friendly (Delta/Arceus X/iOS)
+local function FlingBallImproved(targetPlayer)
+    local Players = game:GetService("Players")
+    local player = Players.LocalPlayer
+    local char = player.Character or player.CharacterAdded:Wait()
+    local hrp = char:WaitForChild("HumanoidRootPart")
+    local hum = char:WaitForChild("Humanoid")
     local backpack = player:WaitForChild("Backpack")
-    local ServerBalls = workspace.WorkspaceCom:WaitForChild("001_SoccerBalls")
-
-    local function GetBall()
-        if not backpack:FindFirstChild("SoccerBall") then
-            game:GetService("ReplicatedStorage").RE:FindFirstChild("1Too1l"):InvokeServer("PickingTools", "SoccerBall")
-        end
-        repeat task.wait() until backpack:FindFirstChild("SoccerBall")
-        backpack.SoccerBall.Parent = character
-        repeat task.wait() until ServerBalls:FindFirstChild("Soccer" .. player.Name)
-        character.SoccerBall.Parent = backpack
-        return ServerBalls:FindFirstChild("Soccer" .. player.Name)
+    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+    local RunService = game:GetService("RunService")
+    
+    local ServerBallsFolder = workspace:WaitForChild("WorkspaceCom", 8):WaitForChild("001_SoccerBalls", 8)
+    if not ServerBallsFolder then
+        warn("Pasta de bolas não encontrada!")
+        return
     end
-
-    local Ball = ServerBalls:FindFirstChild("Soccer" .. player.Name) or GetBall()
+    
+    local ballName = "Soccer" .. player.Name
+    local Ball = ServerBallsFolder:FindFirstChild(ballName)
+    
+    -- Função pra pegar/criar a bola se não tiver
+    local function GetOrCreateBall()
+        if not backpack:FindFirstChild("SoccerBall") then
+            local pickEvent = ReplicatedStorage.RE:FindFirstChild("1Too1l")
+            if pickEvent then
+                pickEvent:InvokeServer("PickingTools", "SoccerBall")
+            end
+        end
+        
+        task.wait(0.4)  -- Espera sync
+        if backpack:FindFirstChild("SoccerBall") then
+            backpack.SoccerBall.Parent = char
+            task.wait(0.4)
+            backpack.SoccerBall.Parent = backpack  -- Sync server
+        end
+        
+        Ball = ServerBallsFolder:WaitForChild(ballName, 5)
+        return Ball
+    end
+    
+    if not Ball then
+        Ball = GetOrCreateBall()
+    end
+    if not Ball then
+        warn("Bola não encontrada após tentativa!")
+        return
+    end
+    
+    -- Config física da bola (massless + low density pra fling forte)
     Ball.CanCollide = false
     Ball.Massless = true
-    Ball.CustomPhysicalProperties = PhysicalProperties.new(0.0001, 0, 0)
-
-    if target ~= player then
-        local tchar = target.Character
-        if tchar and tchar:FindFirstChild("HumanoidRootPart") and tchar:FindFirstChild("Humanoid") then
-            local troot = tchar.HumanoidRootPart
-            local thum = tchar.Humanoid
-
-            if Ball:FindFirstChildWhichIsA("BodyVelocity") then
-                Ball:FindFirstChildWhichIsA("BodyVelocity"):Destroy()
-            end
-
-            local bv = Instance.new("BodyVelocity")
-            bv.Name = "FlingPower"
-            bv.Velocity = Vector3.new(9e8, 9e8, 9e8)
-            bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-            bv.P = 9e900
-            bv.Parent = Ball
-
-            workspace.CurrentCamera.CameraSubject = thum
-            local StartTime = os.time()
-            repeat
-                if troot.Velocity.Magnitude > 0 then
-                -- Calculate adjusted position based on target's velocity
-                local pos_x = troot.Position.X + (troot.Velocity.X / 1.5)
-                local pos_y = troot.Position.X - (troot.Velocity.Y / 1.5)
-                local pos_z = troot.Position.X + (troot.Velocity.Z / 1.5)
-
-                -- Position the ball directly at the adjusted position
-                local position = Vector3.new(pos_x, pos_y, pos_z)
-                Ball.CFrame = CFrame.new(position)
-                Ball.Orientation += Vector3.new(60, 60, 60)
-else
-for i, v in pairs(tchar:GetChildren()) do
-if v:IsA("BasePart") and v.CanCollide and not v.Anchored then
-Ball.CFrame = v.CFrame
-task.wait(1/6000)
-end
-end
-end
-                task.wait(1/6000)
-            until troot.Velocity.Magnitude > 1000 or thum.Health <= 0 or not tchar:IsDescendantOf(workspace) or target.Parent ~= players
-            workspace.CurrentCamera.CameraSubject = humanoid
+    Ball.CustomPhysicalProperties = PhysicalProperties.new(0.01, 0, 0.5, 0.5, 1)  -- Ajustado pra menos bounce
+    
+    if targetPlayer == player or not targetPlayer.Character then return end
+    
+    local targetChar = targetPlayer.Character
+    local targetRoot = targetChar:FindFirstChild("HumanoidRootPart")
+    local targetHum = targetChar:FindFirstChild("Humanoid")
+    
+    if not targetRoot or not targetHum or targetHum.Health <= 0 then return end
+    
+    -- Limpa movers antigos
+    for _, child in Ball:GetChildren() do
+        if child:IsA("BodyMover") or child:IsA("AlignPosition") or child:IsA("AlignOrientation") then
+            child:Destroy()
         end
     end
+    
+    -- Cria AlignPosition + AlignOrientation (mais suave que BodyVelocity em 2026)
+    local alignPos = Instance.new("AlignPosition")
+    alignPos.Name = "FlingAlign"
+    alignPos.MaxForce = math.huge
+    alignPos.Responsiveness = 200  -- Alto pra seguir rápido
+    alignPos.RigidityEnabled = false  -- Suave
+    alignPos.Parent = Ball
+    
+    local alignOri = Instance.new("AlignOrientation")
+    alignOri.Name = "FlingOri"
+    alignOri.MaxTorque = math.huge
+    alignOri.Responsiveness = 150
+    alignOri.Parent = Ball
+    
+    -- BodyVelocity fallback (pra boost extra)
+    local bv = Instance.new("BodyVelocity")
+    bv.Name = "FlingBoost"
+    bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+    bv.Velocity = Vector3.new(0, 0, 0)  -- Vamos atualizar dinamicamente
+    bv.Parent = Ball
+    
+    -- Camera pra ver o caos (opcional, mas ajuda no troll)
+    workspace.CurrentCamera.CameraSubject = targetHum
+    
+    local startTick = tick()
+    local connection
+    
+    connection = RunService.Heartbeat:Connect(function(deltaTime)
+        if not Ball or not Ball.Parent or not targetRoot or not targetRoot.Parent or targetHum.Health <= 0 or tick() - startTick > 12 then
+            connection:Disconnect()
+            workspace.CurrentCamera.CameraSubject = hum
+            if alignPos then alignPos:Destroy() end
+            if alignOri then alignOri:Destroy() end
+            if bv then bv:Destroy() end
+            return
+        end
+        
+        -- Previsão melhor: velocity + extrapolação (considera lag \~0.1-0.2s)
+        local targetVel = targetRoot.AssemblyLinearVelocity
+        local predictionOffset = targetVel * 0.15  -- Ajuste aqui (0.1 = baixo ping, 0.25 = alto ping)
+        
+        local predictedPos = targetRoot.Position + predictionOffset + Vector3.new(0, 2, 0)  -- Um pouco acima pra bater no torso
+        
+        -- Se parado, tenta mirar em qualquer parte do corpo
+        if targetVel.Magnitude < 5 then
+            local closestPart = nil
+            local minDist = math.huge
+            for _, part in targetChar:GetChildren() do
+                if part:IsA("BasePart") and part.CanCollide and not part.Anchored then
+                    local dist = (part.Position - Ball.Position).Magnitude
+                    if dist < minDist then
+                        minDist = dist
+                        closestPart = part
+                    end
+                end
+            end
+            if closestPart then
+                predictedPos = closestPart.Position
+            end
+        end
+        
+        -- Aplica
+        alignPos.Position = predictedPos
+        alignOri.CFrame = targetRoot.CFrame  -- Mantém orientação similar pra spin legal
+        
+        -- Boost velocity extra (pra fling insano)
+        local directionToTarget = (predictedPos - Ball.Position).Unit
+        bv.Velocity = directionToTarget * 250 + Vector3.new(0, 80, 0)  -- Ajuste 250 pra mais/menos força
+        
+        -- Spin visual
+        Ball.AssemblyAngularVelocity = Vector3.new( math.random(-200,200), math.random(-200,200), math.random(-200,200) )
+        
+        -- Check se já flinged (velocity alta = sucesso)
+        if targetRoot.AssemblyLinearVelocity.Magnitude > 500 then
+            task.delay(0.5, function()
+                connection:Disconnect()
+                workspace.CurrentCamera.CameraSubject = hum
+                if alignPos then alignPos:Destroy() end
+                if alignOri then alignOri:Destroy() end
+                if bv then bv:Destroy() end
+            end)
+        end
+    end)
 end
 
-Troll:AddButton({
-    Name = "Fling Ball",
-    Callback = function()
-        FlingBall(game:GetService("Players")[selectedPlayerName])
-    end
-})
+-- Exemplo de uso no botão (adicione no seu hub com Kavo ou similar)
+-- Troll:AddButton({
+--     Name = "Fling Ball Melhorado",
+--     Callback = function()
+--         local target = game.Players:FindFirstChild(selectedPlayerName)
+--         if target then FlingBallImproved(target) end
+--     end
+-- })
 
 local nukeFlashEnabled = false
 local nukeFlashTrack = nil
@@ -298,3 +378,4 @@ Troll:AddToggle({
         end
     end
 })
+
