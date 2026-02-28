@@ -20,15 +20,9 @@ local Window = Library:MakeWindow({
 })
 
 -- Botão minimizar
-function Window:AddMinimizeButton(config)
-    local btn = Instance.new("ImageButton")
-    btn.Name = "MinimizeButton"
-    btn.Parent = TopBar
-    btn.Size = UDim2.new(0, 32, 0, 32)
-    btn.Position = UDim2.new(1, -36, 0, 4)
-    btn.BackgroundTransparency = 1
-    btn.Image = config.Image or ""
-
+Window:AddMinimizeButton({
+    Image = "rbxassetid://3926305904"
+})
 -- Criar Tab
 local Troll = Window:MakeTab({
     Title = "| Troll",
