@@ -129,14 +129,14 @@ local function FlingBall(target)
             repeat
                 if troot.Velocity.Magnitude > 0 then
                 -- Calculate adjusted position based on target's velocity
-                local pos_x = troot.Position.X + (troot.Velocity.X / 5.5)
-                local pos_y = troot.Position.X - (troot.Velocity.Y / 5.5)
-                local pos_z = troot.Position.X + (troot.Velocity.Z / 5.5)
+                local pos_x = troot.Position.X + (troot.Velocity.X / 1.5)
+                local pos_y = troot.Position.X - (troot.Velocity.Y / 1.5)
+                local pos_z = troot.Position.X + (troot.Velocity.Z / 1.5)
 
                 -- Position the ball directly at the adjusted position
                 local position = Vector3.new(pos_x, pos_y, pos_z)
                 Ball.CFrame = CFrame.new(position)
-                Ball.Orientation += Vector3.new(45, 60, 30)
+                Ball.Orientation += Vector3.new(60, 60, 60)
 else
 for i, v in pairs(tchar:GetChildren()) do
 if v:IsA("BasePart") and v.CanCollide and not v.Anchored then
