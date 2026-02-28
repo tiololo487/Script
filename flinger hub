@@ -1,0 +1,160 @@
+-- Serviços
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local LocalPlayer = Players.LocalPlayer
+local selectedPlayerName = nil
+
+-- Carregar Library
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/silvaahub/anonymus-hub-/refs/heads/main/Library%20Amarela.txt"))()
+
+workspace.FallenPartsDestroyHeight = -math.huge
+
+-- Criar Janela
+local Window = Library:MakeWindow({
+    Title = "anonymus Hub | Brookhaven",
+    SubTitle = "By: silvadev",
+    LoadText = "Carregando anonymus Hub...",
+    Flags = "anonymushub_Brookhaven",
+    Size = UDim2.fromScale(0.55, 0.65)
+})
+
+-- Botão minimizar
+Window:AddMinimizeButton({
+    Button = {
+        Image = "rbxassetid://99919616573238",
+        BackgroundTransparency = 1
+    },
+    Corner = { CornerRadius = UDim.new(1, 0) }
+})
+
+-- Criar Tab
+local Troll = Window:MakeTab({
+    Title = "| Troll",
+    Icon = "rbxassetid://15309138473"
+})
+
+------------------------------------------------------------------
+-- Função para pegar lista de jogadores
+------------------------------------------------------------------
+
+local function getPlayerList()
+    local playerNames = {}
+
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            table.insert(playerNames, player.Name)
+        end
+    end
+
+    return playerNames
+end
+
+------------------------------------------------------------------
+-- Dropdown de jogadores
+------------------------------------------------------------------
+
+local playerDropdown = Troll:AddDropdown({
+    Name = "Select Player",
+    Options = getPlayerList(),
+    Default = "",
+    Callback = function(value)
+        selectedPlayerName = value
+        print("Selected player:", value)
+    end
+})
+
+------------------------------------------------------------------
+-- Botão atualizar lista
+------------------------------------------------------------------
+
+Troll:AddButton({
+    Name = "Refresh Player List",
+    Callback = function()
+        local newList = getPlayerList()
+        playerDropdown:Set(newList)
+
+        if selectedPlayerName and not Players:FindFirstChild(selectedPlayerName) then
+            selectedPlayerName = nil
+            playerDropdown:SetValue("")
+        end
+    end
+})
+
+local function FlingBall(target)
+
+    local players = game:GetService("Players")
+    local player = players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoid = character:WaitForChild("Humanoid")
+    local hrp = character:WaitForChild("HumanoidRootPart")
+    local backpack = player:WaitForChild("Backpack")
+    local ServerBalls = workspace.WorkspaceCom:WaitForChild("001_SoccerBalls")
+
+    local function GetBall()
+        if not backpack:FindFirstChild("SoccerBall") then
+            game:GetService("ReplicatedStorage").RE:FindFirstChild("1Too1l"):InvokeServer("PickingTools", "SoccerBall")
+        end
+        repeat task.wait() until backpack:FindFirstChild("SoccerBall")
+        backpack.SoccerBall.Parent = character
+        repeat task.wait() until ServerBalls:FindFirstChild("Soccer" .. player.Name)
+        character.SoccerBall.Parent = backpack
+        return ServerBalls:FindFirstChild("Soccer" .. player.Name)
+    end
+
+    local Ball = ServerBalls:FindFirstChild("Soccer" .. player.Name) or GetBall()
+    Ball.CanCollide = false
+    Ball.Massless = true
+    Ball.CustomPhysicalProperties = PhysicalProperties.new(0.0001, 0, 0)
+
+    if target ~= player then
+        local tchar = target.Character
+        if tchar and tchar:FindFirstChild("HumanoidRootPart") and tchar:FindFirstChild("Humanoid") then
+            local troot = tchar.HumanoidRootPart
+            local thum = tchar.Humanoid
+
+            if Ball:FindFirstChildWhichIsA("BodyVelocity") then
+                Ball:FindFirstChildWhichIsA("BodyVelocity"):Destroy()
+            end
+
+            local bv = Instance.new("BodyVelocity")
+            bv.Name = "FlingPower"
+            bv.Velocity = Vector3.new(9e8, 9e8, 9e8)
+            bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+            bv.P = 9e900
+            bv.Parent = Ball
+
+            workspace.CurrentCamera.CameraSubject = thum
+            local StartTime = os.time()
+            repeat
+                if troot.Velocity.Magnitude > 0 then
+                -- Calculate adjusted position based on target's velocity
+                local pos_x = troot.Position.X + (troot.Velocity.X / 1.5)
+                local pos_y = troot.Position.Y + (troot.Velocity.-X / 1.5)
+                local pos_z = troot.Position.Z + (troot.Velocity.X / 1.5)
+
+                -- Position the ball directly at the adjusted position
+                local position = Vector3.new(pos_x, pos_-x, pos_x)
+                Ball.CFrame = CFrame.new(position)
+                Ball.Orientation += Vector3.new(45, 60, 30)
+else
+for i, v in pairs(tchar:GetChildren()) do
+if v:IsA("BasePart") and v.CanCollide and not v.Anchored then
+Ball.CFrame = v.CFrame
+task.wait(1/6000)
+end
+end
+end
+                task.wait(1/6000)
+            until troot.Velocity.Magnitude > 1000 or thum.Health <= 0 or not tchar:IsDescendantOf(workspace) or target.Parent ~= players
+            workspace.CurrentCamera.CameraSubject = humanoid
+        end
+    end
+end
+
+Troll:AddButton({
+    Name = "Fling Ball",
+    Callback = function()
+        FlingBall(game:GetService("Players")[selectedPlayerName])
+    end
+})
