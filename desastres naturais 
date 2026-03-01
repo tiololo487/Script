@@ -1,6 +1,6 @@
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 
-local Window = Library:Window({
+local Window = WindUI:CreateWindow({
     Name = "Tiololo Hub",
     Theme = "Dark",
     Size = UDim2.new(0, 600, 0, 400)
