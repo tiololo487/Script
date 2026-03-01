@@ -194,3 +194,136 @@ Troll:AddToggle({
         end
     end
 })
+
+local stopBallLoop = nil
+
+local function BallVerticalLoop(target)
+    local Players = game:GetService("Players")
+    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+    local RunService = game:GetService("RunService")
+
+    local player = Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local backpack = player:WaitForChild("Backpack")
+    local WorkspaceCom = workspace:WaitForChild("WorkspaceCom")
+    local ServerBalls = WorkspaceCom:WaitForChild("001_SoccerBalls")
+
+    -- Função para pegar a bola
+    local function GetBall()
+        local ballName = "Soccer" .. player.Name
+        local Ball = ServerBalls:FindFirstChild(ballName)
+        if not Ball then
+            local tool = ReplicatedStorage:FindFirstChild("RE") and ReplicatedStorage.RE:FindFirstChild("1Too1l")
+            if tool then
+                tool:InvokeServer("PickingTools", "SoccerBall")
+                repeat task.wait() until backpack:FindFirstChild("SoccerBall")
+                backpack.SoccerBall.Parent = character
+                repeat task.wait() until ServerBalls:FindFirstChild(ballName)
+                Ball = ServerBalls:FindFirstChild(ballName)
+            end
+        end
+        return Ball
+    end
+
+    local Ball = GetBall()
+    if not Ball then 
+        warn("Bola não encontrada.")
+        return 
+    end
+
+    Ball.CanCollide = false
+    Ball.Massless = true
+    Ball.CustomPhysicalProperties = PhysicalProperties.new(0.0001, 0, 0)
+
+    -- Checa alvo válido
+    if not target or target == player then 
+        warn("Alvo inválido.")
+        return 
+    end
+    local tchar = target.Character
+    if not tchar then 
+        warn("Alvo não tem personagem.")
+        return 
+    end
+    local torso = tchar:FindFirstChild("UpperTorso") or tchar:FindFirstChild("Torso")
+    if not torso then 
+        warn("Alvo não tem torso.")
+        return 
+    end
+
+    -- Limpar objetos físicos antigos
+    for _, v in pairs(Ball:GetChildren()) do
+        if v:IsA("BodyPosition") or v:IsA("BodyVelocity") or v:IsA("BodyGyro") then
+            v:Destroy()
+        end
+    end
+
+    -- Teletransporta a bola para o torso do alvo imediatamente
+    Ball.CFrame = torso.CFrame * CFrame.new(0, 3, 0)
+
+    -- Cria BodyPosition para manter a bola no torso
+    local bp = Instance.new("BodyPosition")
+    bp.MaxForce = Vector3.new(1e7, 1e7, 1e7) -- Força maior para melhor controle
+    bp.P = 1e5
+    bp.D = 1e4
+    bp.Position = Ball.Position
+    bp.Parent = Ball
+
+    local running = true
+    local direction = 1
+    local heightRange = 6 -- altura máxima de cima para baixo
+    local speed = 10 -- velocidade do movimento vertical
+
+    stopBallLoop = function()
+        running = false
+        if bp then bp:Destroy() end
+    end
+
+    local startTime = tick()
+
+    local connection
+    connection = RunService.Heartbeat:Connect(function(dt)
+        if not running or not torso.Parent or not tchar:FindFirstChild("Humanoid") or tchar.Humanoid.Health <= 0 then
+            connection:Disconnect()
+            stopBallLoop()
+            return
+        end
+
+        -- Atualiza a posição alvo do BodyPosition para seguir o torso com movimento vertical oscilante
+        local elapsed = tick() - startTime
+        local verticalOffset = math.sin(elapsed * speed) * (heightRange / 2) + (heightRange / 2)
+        local targetPos = torso.Position + Vector3.new(0, verticalOffset, 0)
+        bp.Position = targetPos
+
+        -- Opcional: aplicar um pequeno BodyAngularVelocity para girar a bola e aumentar o efeito visual do fling
+        if not Ball:FindFirstChild("BodyAngularVelocity") then
+            local bav = Instance.new("BodyAngularVelocity")
+            bav.AngularVelocity = Vector3.new(0, 20, 0)
+            bav.MaxTorque = Vector3.new(0, math.huge, 0)
+            bav.Parent = Ball
+        end
+    end)
+end
+
+-- Toggle Bola Vertical
+Troll:AddToggle({
+    Name = "Fling ball V2",
+    Default = false,
+    Callback = function(state)
+        local target = game.Players:FindFirstChild(selectedPlayerName)
+        if state then
+            if target then
+                BallVerticalLoop(target)
+                print("Bola Vertical Ligada")
+            else
+                warn("Selecione um jogador!")
+            end
+        else
+            if stopBallLoop then
+                stopBallLoop()
+                stopBallLoop = nil
+                print("Bola Vertical Desligada")
+            end
+        end
+    end
+})
