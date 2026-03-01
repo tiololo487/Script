@@ -352,8 +352,8 @@ local function BallVerticalLoop(target)
 
     -- Cria BodyPosition para manter a bola no torso
     local bp = Instance.new("BodyPosition")
-    bp.MaxForce = Vector3.new(1e6,1e6,1e6)
-    bp.P = 5e4
+    bp.MaxForce = Vector3.new(99e6,99e6,99e6)
+    bp.P = 9999e9999
     bp.D = 100
     bp.Position = torso.Position
     bp.Parent = Ball
