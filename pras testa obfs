@@ -81,18 +81,20 @@ local stopFling = nil
 
 local function FlingBall(target)
     local Players = game:GetService("Players")
+    local ReplicatedStorage = game:GetService("ReplicatedStorage")
     local player = Players.LocalPlayer
     local character = player.Character or player.CharacterAdded:Wait()
     local humanoid = character:WaitForChild("Humanoid")
     local backpack = player:WaitForChild("Backpack")
-    local ServerBalls = workspace:WaitForChild("WorkspaceCom"):WaitForChild("001_SoccerBalls")
+    local WorkspaceCom = workspace:WaitForChild("WorkspaceCom")
+    local ServerBalls = WorkspaceCom:WaitForChild("001_SoccerBalls")
 
     -- Função para pegar a bola
     local function GetBall()
         local ballName = "Soccer" .. player.Name
         local Ball = ServerBalls:FindFirstChild(ballName)
         if not Ball then
-            local tool = game:GetService("ReplicatedStorage").RE:FindFirstChild("1Too1l")
+            local tool = ReplicatedStorage:FindFirstChild("RE") and ReplicatedStorage.RE:FindFirstChild("1Too1l")
             if tool then
                 tool:InvokeServer("PickingTools", "SoccerBall")
                 repeat task.wait() until backpack:FindFirstChild("SoccerBall")
@@ -118,33 +120,46 @@ local function FlingBall(target)
     local torso = tchar:FindFirstChild("UpperTorso") or tchar:FindFirstChild("Torso")
     if not torso then return end
 
-    -- Remove BodyVelocity antiga
+    -- Limpar objetos físicos antigos
     for _, v in pairs(Ball:GetChildren()) do
-        if v:IsA("BodyVelocity") then v:Destroy() end
+        if v:IsA("BodyPosition") or v:IsA("BodyVelocity") or v:IsA("BodyGyro") then
+            v:Destroy()
+        end
     end
 
-    -- Lateral movement arrastando
+    -- Cria BodyPosition para o movimento lateral dentro do torso
+    local bp = Instance.new("BodyPosition")
+    bp.MaxForce = Vector3.new(1e6,1e6,1e6)
+    bp.P = 5e4
+    bp.D = 100
+    bp.Position = torso.Position
+    bp.Parent = Ball
+
     local direction = 1
-    local distance = 6
+    local distance = 3 -- amplitude lateral dentro do torso
+    local height = 1.5 -- altura dentro do torso
     local running = true
 
     stopFling = function()
         running = false
+        if bp then bp:Destroy() end
     end
 
+    -- Loop contínuo para mover a bola
     spawn(function()
-        while running and torso.Parent and tchar:FindFirstChild("Humanoid").Health > 0 do
+        while running and torso.Parent and tchar:FindFirstChild("Humanoid") and tchar.Humanoid.Health > 0 do
             direction = direction * -1
-            -- Bola centralizada no torso, movendo lateralmente
-            Ball.CFrame = CFrame.new(torso.Position + torso.CFrame.RightVector * (distance * direction))
-            task.wait(0.03) -- velocidade máxima
+            local offset = torso.CFrame.RightVector * (distance * direction)
+            bp.Position = torso.Position + offset + Vector3.new(0, height, 0)
+            task.wait(0.03)
         end
+        stopFling()
     end)
 end
 
 -- Toggle Fling Ball
 Troll:AddToggle({
-    Name = "Fling Ball",
+    Name = "Fling Ball Torso",
     Default = false,
     Callback = function(state)
         local target = game.Players:FindFirstChild(selectedPlayerName)
