@@ -621,3 +621,119 @@ Troll:AddToggle({
         end
     end
 })
+
+local stopOrbitSelf = nil
+
+local function OrbitBallSelf()
+
+    local Players = game:GetService("Players")
+    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+    local RunService = game:GetService("RunService")
+
+    local player = Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local hrp = character:WaitForChild("HumanoidRootPart")
+    local backpack = player:WaitForChild("Backpack")
+
+    local WorkspaceCom = workspace:WaitForChild("WorkspaceCom")
+    local ServerBalls = WorkspaceCom:WaitForChild("001_SoccerBalls")
+
+    -- Pegar bola
+    local function GetBall()
+        local ballName = "Soccer" .. player.Name
+        local Ball = ServerBalls:FindFirstChild(ballName)
+
+        if not Ball then
+            local tool = ReplicatedStorage:FindFirstChild("RE") 
+                and ReplicatedStorage.RE:FindFirstChild("1Too1l")
+
+            if tool then
+                tool:InvokeServer("PickingTools", "SoccerBall")
+                repeat task.wait() until backpack:FindFirstChild("SoccerBall")
+                backpack.SoccerBall.Parent = character
+                repeat task.wait() until ServerBalls:FindFirstChild(ballName)
+                Ball = ServerBalls:FindFirstChild(ballName)
+            end
+        end
+
+        return Ball
+    end
+
+    local Ball = GetBall()
+    if not Ball then return end
+
+    Ball.CanCollide = false
+    Ball.Massless = true
+    Ball.CustomPhysicalProperties = PhysicalProperties.new(0.0001,0,0)
+
+    -- Limpar forças antigas
+    for _, v in pairs(Ball:GetChildren()) do
+        if v:IsA("BodyPosition")
+        or v:IsA("BodyVelocity")
+        or v:IsA("BodyGyro")
+        or v:IsA("BodyAngularVelocity") then
+            v:Destroy()
+        end
+    end
+
+    -- Manter órbita
+    local bp = Instance.new("BodyPosition")
+    bp.MaxForce = Vector3.new(1e6,1e6,1e6)
+    bp.P = 5e4
+    bp.D = 100
+    bp.Parent = Ball
+
+    -- Giro próprio extremamente rápido
+    local bav = Instance.new("BodyAngularVelocity")
+    bav.MaxTorque = Vector3.new(1e6,1e6,1e6)
+    bav.AngularVelocity = Vector3.new(99e800, 99e800, 99e800)
+    bav.Parent = Ball
+
+    local running = true
+    local radius = 4
+    local angle = 0
+
+    stopOrbitSelf = function()
+        running = false
+        if bp then bp:Destroy() end
+        if bav then bav:Destroy() end
+    end
+
+    local connection
+    connection = RunService.Heartbeat:Connect(function(dt)
+
+        if not running or not hrp.Parent then
+            connection:Disconnect()
+            stopOrbitSelf()
+            return
+        end
+
+        -- Velocidade da órbita
+        angle = angle + dt * 20
+
+        local x = math.cos(angle) * radius
+        local z = math.sin(angle) * radius
+        local y = 1.5 -- leve altura
+
+        bp.Position = hrp.Position + Vector3.new(x, y, z)
+    end)
+end
+
+
+-- Toggle
+Troll:AddToggle({
+    Name = "Orbit Ball",
+    Default = false,
+    Callback = function(state)
+        if state then
+            OrbitBallSelf()
+            print("Orbit 4 Studs Ligado")
+        else
+            if stopOrbitSelf then
+                stopOrbitSelf()
+                stopOrbitSelf = nil
+                print("Orbit 4 Studs Desligado")
+            end
+        end
+    end
+})
