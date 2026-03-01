@@ -293,9 +293,10 @@ Troll:AddToggle({
 
 local stopAura = nil
 
-local function FlingAura()
+local function FlingAuraSafe()
     local Players = game:GetService("Players")
     local RunService = game:GetService("RunService")
+    local Debris = game:GetService("Debris")
     local player = Players.LocalPlayer
     local character = player.Character or player.CharacterAdded:Wait()
     local hrp = character:WaitForChild("HumanoidRootPart")
@@ -319,14 +320,16 @@ local function FlingAura()
             if obj:IsA("BasePart") and not obj.Anchored and obj.Parent ~= character then
                 local distance = (obj.Position - hrp.Position).Magnitude
                 if distance <= radius then
-                    -- Cria BodyVelocity para arremessar
+                    -- Aplica BodyVelocity apenas se não houver já um
                     if not obj:FindFirstChild("TempFling") then
+                        local direction = (obj.Position - hrp.Position).Unit
                         local bv = Instance.new("BodyVelocity")
                         bv.Name = "TempFling"
                         bv.MaxForce = Vector3.new(1e6,1e6,1e6)
-                        bv.Velocity = (obj.Position - hrp.Position).Unit * forcePower + Vector3.new(0, forcePower/2, 0)
+                        -- Aplica força somente lateral + pra frente/fora, sem subir você
+                        bv.Velocity = Vector3.new(direction.X, 0, direction.Z) * forcePower
                         bv.Parent = obj
-                        game:GetService("Debris"):AddItem(bv, 0.1) -- destrói após 0.1s
+                        Debris:AddItem(bv, 0.1) -- destrói após 0.1s
                     end
                 end
             end
@@ -334,13 +337,13 @@ local function FlingAura()
     end)
 end
 
--- Toggle Aura Fling
+-- Toggle Aura Fling Seguro
 Troll:AddToggle({
-    Name = "Aura Fling",
+    Name = "Aura Fling Seguro",
     Default = false,
     Callback = function(state)
         if state then
-            FlingAura()
+            FlingAuraSafe()
             print("Aura Fling Ligada")
         else
             if stopAura then
