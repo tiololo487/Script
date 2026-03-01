@@ -151,7 +151,7 @@ local function FlingBall(target)
 end
 
 Troll:AddToggle({
-    Name = "Fling Ball", um
+    Name = "Fling Ball",
     Default = false,
     Callback = function(state)
         local target = game:GetService("Players"):FindFirstChild(selectedPlayerName)
