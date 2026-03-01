@@ -6,9 +6,9 @@ local Window = Library:Window({
     Size = UDim2.new(0, 600, 0, 400)
 })
 
-local TrollTab = Window:Tab({
+local Troll = Window:CreateTab({
     Name = "Troll",
-    Icon = "rbxassetid://7733960981" -- opcional
+    Icon = "rbxassetid://7733960981"
 })
 
 local stopPullAura = nil
