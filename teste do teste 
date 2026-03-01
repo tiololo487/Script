@@ -1,6 +1,7 @@
 -- Serviços
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local LocalPlayer = Players.LocalPlayer
 local selectedPlayerName = nil
@@ -33,23 +34,19 @@ local Troll = Window:MakeTab({
 ------------------------------------------------------------------
 -- Função para pegar lista de jogadores
 ------------------------------------------------------------------
-
 local function getPlayerList()
     local playerNames = {}
-
     for _, player in ipairs(Players:GetPlayers()) do
         if player ~= LocalPlayer then
             table.insert(playerNames, player.Name)
         end
     end
-
     return playerNames
 end
 
 ------------------------------------------------------------------
 -- Dropdown de jogadores
 ------------------------------------------------------------------
-
 local playerDropdown = Troll:AddDropdown({
     Name = "Select Player",
     Options = getPlayerList(),
@@ -63,59 +60,76 @@ local playerDropdown = Troll:AddDropdown({
 ------------------------------------------------------------------
 -- Botão atualizar lista
 ------------------------------------------------------------------
-
 Troll:AddButton({
     Name = "Refresh Player List",
     Callback = function()
         local newList = getPlayerList()
-        playerDropdown:Set(newList)
+        if playerDropdown.Refresh then
+            playerDropdown:Refresh(newList) -- biblioteca suporta Refresh
+        elseif playerDropdown.SetOptions then
+            playerDropdown:SetOptions(newList)
+        end
 
         if selectedPlayerName and not Players:FindFirstChild(selectedPlayerName) then
             selectedPlayerName = nil
-            playerDropdown:SetValue("")
+            if playerDropdown.Set then
+                playerDropdown:Set("")
+            end
         end
     end
 })
 
+------------------------------------------------------------------
+-- Função Fling Ball
+------------------------------------------------------------------
 local stopFling = nil
 
 local function FlingBall(target)
-    local players = game:GetService("Players")
-    local player = players.LocalPlayer
-    local character = player.Character or player.CharacterAdded:Wait()
-    local humanoid = character:WaitForChild("Humanoid")
-    local hrp = character:WaitForChild("HumanoidRootPart")
-    local backpack = player:WaitForChild("Backpack")
-    local ServerBalls = workspace.WorkspaceCom:WaitForChild("001_SoccerBalls")
-
-    local function GetBall()
-        if not backpack:FindFirstChild("SoccerBall") then
-            game:GetService("ReplicatedStorage").RE:FindFirstChild("1Too1l"):InvokeServer("PickingTools", "SoccerBall")
-        end
-        repeat task.wait() until backpack:FindFirstChild("SoccerBall")
-        backpack.SoccerBall.Parent = character
-        repeat task.wait() until ServerBalls:FindFirstChild("Soccer" .. player.Name)
-        character.SoccerBall.Parent = backpack
-        return ServerBalls:FindFirstChild("Soccer" .. player.Name)
-    end
-
-    local Ball = ServerBalls:FindFirstChild("Soccer" .. player.Name) or GetBall()
-    Ball.CanCollide = false
-    Ball.Massless = true
-    Ball.CustomPhysicalProperties = PhysicalProperties.new(0.0001, 0, 0)
-
-    if not target or target == player then return end
+    if not target or target == LocalPlayer then return end
     local tchar = target.Character
     if not tchar then return end
     local troot = tchar:FindFirstChild("HumanoidRootPart")
     local thum = tchar:FindFirstChild("Humanoid")
     if not troot or not thum then return end
 
-    if Ball:FindFirstChildWhichIsA("BodyVelocity") then
-        Ball:FindFirstChildWhichIsA("BodyVelocity"):Destroy()
+    local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    local humanoid = character:WaitForChild("Humanoid")
+    local hrp = character:WaitForChild("HumanoidRootPart")
+    local backpack = LocalPlayer:WaitForChild("Backpack")
+
+    local WorkspaceCom = workspace:FindFirstChild("WorkspaceCom")
+    if not WorkspaceCom then warn("WorkspaceCom não encontrado") return end
+    local ServerBalls = WorkspaceCom:FindFirstChild("001_SoccerBalls")
+    if not ServerBalls then warn("001_SoccerBalls não encontrado") return end
+
+    -- Função para pegar a bola
+    local function GetBall()
+        if not backpack:FindFirstChild("SoccerBall") then
+            local RE = ReplicatedStorage:FindFirstChild("RE")
+            if not RE then warn("RE não encontrado") return end
+            local remote = RE:FindFirstChild("1Too1l")
+            if not remote or not remote:IsA("RemoteFunction") then warn("RemoteFunction não encontrado") return end
+            remote:InvokeServer("PickingTools", "SoccerBall")
+        end
+        repeat task.wait() until backpack:FindFirstChild("SoccerBall")
+        backpack.SoccerBall.Parent = character
+        repeat task.wait() until ServerBalls:FindFirstChild("Soccer" .. LocalPlayer.Name)
+        character.SoccerBall.Parent = backpack
+        return ServerBalls:FindFirstChild("Soccer" .. LocalPlayer.Name)
     end
 
-    -- BodyPosition para arrastar a bola lateralmente
+    local Ball = ServerBalls:FindFirstChild("Soccer" .. LocalPlayer.Name) or GetBall()
+    if not Ball then return end
+
+    Ball.CanCollide = false
+    Ball.Massless = true
+    Ball.CustomPhysicalProperties = PhysicalProperties.new(0.0001, 0, 0)
+
+    -- Remove BodyVelocity antigo
+    local oldBV = Ball:FindFirstChildWhichIsA("BodyVelocity")
+    if oldBV then oldBV:Destroy() end
+
+    -- Cria BodyPosition para movimentação lateral
     local bp = Instance.new("BodyPosition")
     bp.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
     bp.P = 25000
@@ -133,23 +147,24 @@ local function FlingBall(target)
         workspace.CurrentCamera.CameraSubject = humanoid
     end
 
-    -- Loop do movimento lateral, **fica ativo enquanto running = true**
     while running and tchar:IsDescendantOf(workspace) and thum.Health > 0 do
         direction = direction * -1
         local offset = troot.CFrame.RightVector * (distance * direction)
         bp.Position = troot.Position + offset + Vector3.new(0, 0, 1)
-        task.wait(0.600)
+        task.wait(0.6)
     end
 
     stopFling()
 end
 
--- Toggle
+------------------------------------------------------------------
+-- Toggle Fling Ball
+------------------------------------------------------------------
 Troll:AddToggle({
     Name = "Fling Ball",
     Default = false,
     Callback = function(state)
-        local target = game:GetService("Players"):FindFirstChild(selectedPlayerName)
+        local target = selectedPlayerName and Players:FindFirstChild(selectedPlayerName)
         if state then
             if target then
                 print("Fling Ligado")
