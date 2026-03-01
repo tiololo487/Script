@@ -1,56 +1,12 @@
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
 
-local Window = Library({
+local Window = Library:Window({
     Name = "Tiololo Hub",
     Theme = "Dark",
     Size = UDim2.new(0, 600, 0, 400)
 })
 
-local TrollTab = Window:MakeTab({
-    Name = "Troll"
-})
-
-local RunService = game:GetService("RunService")
-local player = game.Players.LocalPlayer
-
-local radius = 2
-local speed = 5
-local angle = 0
-local conn
-
-local function getCharacterParts()
-    local character = player.Character or player.CharacterAdded:Wait()
-    local hrp = character:WaitForChild("HumanoidRootPart")
-    local leftArm = character:FindFirstChild("LeftUpperArm") or character:FindFirstChild("Left Arm")
-    return character, hrp, leftArm
-end
-
-local function LeftArmOrbit(active)
-    local character, hrp, leftArm = getCharacterParts()
-    if not leftArm or not hrp then return end
-
-    leftArm.CanCollide = false
-    leftArm.Anchored = true
-
-    if active then
-        conn = RunService.RenderStepped:Connect(function(dt)
-            angle = angle + math.rad(speed) * dt
-            local x = math.cos(angle) * radius
-            local z = math.sin(angle) * radius
-            leftArm.CFrame = hrp.CFrame * CFrame.new(x, 0, z) * CFrame.Angles(0, angle, 0)
-        end)
-    else
-        if conn then conn:Disconnect() end
-        leftArm.CFrame = hrp.CFrame * CFrame.new(-1.5, 0, 0)
-        leftArm.Anchored = false
-        leftArm.CanCollide = true
-    end
-end
-
-TrollTab:AddToggle({
-    Name = "Left Arm Orbit",
-    Default = false,
-    Callback = function(value)
-        LeftArmOrbit(value)
-    end
+local TrollTab = Window:Tab({
+    Name = "Troll",
+    Icon = "rbxassetid://7733960981" -- opcional
 })
