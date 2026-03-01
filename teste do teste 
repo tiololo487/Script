@@ -87,3 +87,110 @@ Troll:AddButton({
         end
     end
 })
+
+local stopFling = nil
+
+local function FlingBallVertical(target)
+    local Players = game:GetService("Players")
+    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+    local player = Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoid = character:WaitForChild("Humanoid")
+    local backpack = player:WaitForChild("Backpack")
+    local WorkspaceCom = workspace:WaitForChild("WorkspaceCom")
+    local ServerBalls = WorkspaceCom:WaitForChild("001_SoccerBalls")
+
+    -- Função para pegar a bola
+    local function GetBall()
+        local ballName = "Soccer" .. player.Name
+        local Ball = ServerBalls:FindFirstChild(ballName)
+        if not Ball then
+            local tool = ReplicatedStorage:FindFirstChild("RE") and ReplicatedStorage.RE:FindFirstChild("1Too1l")
+            if tool then
+                tool:InvokeServer("PickingTools", "SoccerBall")
+                repeat task.wait() until backpack:FindFirstChild("SoccerBall")
+                backpack.SoccerBall.Parent = character
+                repeat task.wait() until ServerBalls:FindFirstChild(ballName)
+                Ball = ServerBalls:FindFirstChild(ballName)
+            end
+        end
+        return Ball
+    end
+
+    local Ball = GetBall()
+    if not Ball then return end
+
+    Ball.CanCollide = false
+    Ball.Massless = true
+    Ball.CustomPhysicalProperties = PhysicalProperties.new(0.0001,0,0)
+
+    -- Checa alvo válido
+    if not target or target == player then return end
+    local tchar = target.Character
+    if not tchar then return end
+    local torso = tchar:FindFirstChild("UpperTorso") or tchar:FindFirstChild("Torso")
+    if not torso then return end
+
+    -- Limpar objetos físicos antigos
+    for _, v in pairs(Ball:GetChildren()) do
+        if v:IsA("BodyPosition") or v:IsA("BodyVelocity") or v:IsA("BodyGyro") then
+            v:Destroy()
+        end
+    end
+
+    -- BodyPosition para manter no torso
+    local bp = Instance.new("BodyPosition")
+    bp.MaxForce = Vector3.new(1e6,1e6,1e6)
+    bp.P = 5e4
+    bp.D = 100
+    bp.Position = torso.Position
+    bp.Parent = Ball
+
+    local running = true
+    local direction = 1
+    local heightRange = 3 -- altura máxima de cima para baixo
+    stopFling = function()
+        running = false
+        if bp then bp:Destroy() end
+    end
+
+    spawn(function()
+        while running and torso.Parent and tchar:FindFirstChild("Humanoid") and tchar.Humanoid.Health > 0 do
+            -- Verifica se a bola caiu no chão
+            if Ball.Position.Y < torso.Position.Y - heightRange then
+                -- Reposiciona imediatamente no torso
+                bp.Position = torso.Position + Vector3.new(0, heightRange/2, 0)
+            else
+                -- Movimento vertical contínuo
+                direction = direction * -1
+                local offset = Vector3.new(0, (heightRange/2) * direction, 0)
+                bp.Position = torso.Position + offset
+            end
+            task.wait(0.03)
+        end
+        stopFling()
+    end)
+end
+
+-- Toggle Fling Ball Vertical
+Troll:AddToggle({
+    Name = "Fling Ball Vertical",
+    Default = false,
+    Callback = function(state)
+        local target = game.Players:FindFirstChild(selectedPlayerName)
+        if state then
+            if target then
+                FlingBallVertical(target)
+                print("Fling Vertical Ligado")
+            else
+                warn("Selecione um jogador!")
+            end
+        else
+            if stopFling then
+                stopFling()
+                stopFling = nil
+                print("Fling Vertical Desligado")
+            end
+        end
+    end
+})
