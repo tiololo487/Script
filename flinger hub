@@ -126,8 +126,8 @@ local function FlingBall(target)
                 if troot.Velocity.Magnitude > 0 then
                 -- Calculate adjusted position based on target's velocity
                 local pos_x = troot.Position.X + (troot.Velocity.X / 1.5)
-                local pos_y = troot.Position.X - (troot.Velocity.Y / 1.5)
-                local pos_z = troot.Position.X + (troot.Velocity.Z / 1.5)
+                local pos_y = troot.Position.X - (troot.Velocity.X / 1.5)
+                local pos_z = troot.Position.X + (troot.Velocity.X / 1.5)
 
                 -- Position the ball directly at the adjusted position
                 local position = Vector3.new(pos_x, pos_y, pos_z)
