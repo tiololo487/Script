@@ -10,3 +10,108 @@ local TrollTab = Window:Tab({
     Name = "Troll",
     Icon = "rbxassetid://7733960981" -- opcional
 })
+
+local stopPullAura = nil
+
+local function PullAuraWithNoclip()
+
+    local Players = game:GetService("Players")
+    local RunService = game:GetService("RunService")
+
+    local player = Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local hrp = character:WaitForChild("HumanoidRootPart")
+
+    local radius = 10
+    local pullDistance = 1
+
+    local running = true
+
+    stopPullAura = function()
+        running = false
+    end
+
+    local connection
+    connection = RunService.Heartbeat:Connect(function()
+
+        if not running or not hrp.Parent then
+            connection:Disconnect()
+
+            -- Restaurar colisão
+            for _, part in pairs(character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = true
+                end
+            end
+
+            stopPullAura()
+            return
+        end
+
+        -- =====================
+        -- N O C L I P
+        -- =====================
+        for _, part in pairs(character:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+        end
+
+        -- =====================
+        -- P U L L   A U R A
+        -- =====================
+        for _, obj in pairs(workspace:GetDescendants()) do
+            if obj:IsA("BasePart")
+            and not obj.Anchored
+            and not obj:IsDescendantOf(character) then
+
+                local distance = (obj.Position - hrp.Position).Magnitude
+
+                if distance <= radius then
+
+                    if not obj:FindFirstChild("PullForce") then
+                        local bp = Instance.new("BodyPosition")
+                        bp.Name = "PullForce"
+                        bp.MaxForce = Vector3.new(1e6,1e6,1e6)
+                        bp.P = 5e4
+                        bp.D = 100
+                        bp.Parent = obj
+                    end
+
+                    local bp = obj:FindFirstChild("PullForce")
+                    if bp then
+                        bp.Position = hrp.Position + (hrp.CFrame.LookVector * pullDistance)
+                    end
+                end
+            end
+        end
+
+    end)
+end
+
+
+-- Toggle
+Troll:AddToggle({
+    Name = "Black hole",
+    Default = false,
+    Callback = function(state)
+        if state then
+            PullAuraWithNoclip()
+            print("Pull Aura Ligado")
+        else
+            if stopPullAura then
+                stopPullAura()
+                stopPullAura = nil
+
+                -- Remover forças restantes
+                for _, obj in pairs(workspace:GetDescendants()) do
+                    if obj:FindFirstChild("PullForce") then
+                        obj.PullForce:Destroy()
+                    end
+                end
+
+                print("Pull Aura Desligado")
+            end
+        end
+    end
+})
