@@ -126,7 +126,6 @@ local function FlingBall(target)
 
     local direction = 1
     local distance = 6
-    local maxDistance = 4 -- distância máxima do player
     local running = true
     stopFling = function()
         running = false
@@ -134,22 +133,18 @@ local function FlingBall(target)
         workspace.CurrentCamera.CameraSubject = humanoid
     end
 
+    -- Loop do movimento lateral, **fica ativo enquanto running = true**
     while running and tchar:IsDescendantOf(workspace) and thum.Health > 0 do
         direction = direction * -1
         local offset = troot.CFrame.RightVector * (distance * direction)
-
-        -- limita a distância máxima lateral
-        if offset.Magnitude > maxDistance then
-            offset = offset.Unit * maxDistance
-        end
-
-        bp.Position = troot.Position + offset + Vector3.new(0, 2, 0)
-        task.wait(0.15)
+        bp.Position = troot.Position + offset + Vector3.new(0, 0, 1)
+        task.wait(0.600)
     end
 
     stopFling()
 end
 
+-- Toggle
 Troll:AddToggle({
     Name = "Fling Ball",
     Default = false,
@@ -168,7 +163,7 @@ Troll:AddToggle({
             if stopFling then
                 stopFling()
                 stopFling = nil
-              ("Fling Desligado")
+                print("Fling Desligado")
             end
         end
     end
