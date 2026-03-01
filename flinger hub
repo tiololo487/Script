@@ -157,7 +157,7 @@ Troll:AddToggle({
             FlingBall(game:GetService("Players")[selectedPlayerName])
         else
             print("Desligado")
-            stop
+        
         end
     end
 })
