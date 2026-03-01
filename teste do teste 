@@ -148,7 +148,7 @@ local function FlingBallVertical(target)
 
     local running = true
     local direction = 1
-    local heightRange = 3 -- altura máxima de cima para baixo
+    local heightRange = 5 -- altura máxima de cima para baixo
     stopFling = function()
         running = false
         if bp then bp:Destroy() end
