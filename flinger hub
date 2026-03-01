@@ -518,3 +518,106 @@ Troll:AddToggle({
         end
     end
 })
+
+local stopOrbit = nil
+
+local function OrbitBallCrazy()
+    local Players = game:GetService("Players")
+    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+    local player = Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local hrp = character:WaitForChild("HumanoidRootPart")
+    local backpack = player:WaitForChild("Backpack")
+    local WorkspaceCom = workspace:WaitForChild("WorkspaceCom")
+    local ServerBalls = WorkspaceCom:WaitForChild("001_SoccerBalls")
+
+    -- Função para pegar a bola
+    local function GetBall()
+        local ballName = "Soccer" .. player.Name
+        local Ball = ServerBalls:FindFirstChild(ballName)
+        if not Ball then
+            local tool = ReplicatedStorage:FindFirstChild("RE") and ReplicatedStorage.RE:FindFirstChild("1Too1l")
+            if tool then
+                tool:InvokeServer("PickingTools", "SoccerBall")
+                repeat task.wait() until backpack:FindFirstChild("SoccerBall")
+                backpack.SoccerBall.Parent = character
+                repeat task.wait() until ServerBalls:FindFirstChild(ballName)
+                Ball = ServerBalls:FindFirstChild(ballName)
+            end
+        end
+        return Ball
+    end
+
+    local Ball = GetBall()
+    if not Ball then return end
+
+    Ball.CanCollide = false
+    Ball.Massless = true
+    Ball.CustomPhysicalProperties = PhysicalProperties.new(0.0001,0,0)
+
+    -- Limpar objetos físicos antigos
+    for _, v in pairs(Ball:GetChildren()) do
+        if v:IsA("BodyPosition") or v:IsA("BodyVelocity") or v:IsA("BodyGyro") or v:IsA("BodyAngularVelocity") then
+            v:Destroy()
+        end
+    end
+
+    -- BodyPosition para orbitar
+    local bp = Instance.new("BodyPosition")
+    bp.MaxForce = Vector3.new(1e6,1e6,1e6)
+    bp.P = 5e4
+    bp.D = 100
+    bp.Position = hrp.Position
+    bp.Parent = Ball
+
+    -- BodyAngularVelocity para giro louco extremo
+    local bav = Instance.new("BodyAngularVelocity")
+    bav.MaxTorque = Vector3.new(1e6,1e6,1e6)
+    bav.AngularVelocity = Vector3.new(9e800,9e800,9e800) -- velocidade máxima louca
+    bav.Parent = Ball
+
+    local running = true
+    local radius = 5
+    local t = 0
+
+    stopOrbit = function()
+        running = false
+        if bp then bp:Destroy() end
+        if bav then bav:Destroy() end
+    end
+
+    local RunService = game:GetService("RunService")
+    local connection
+    connection = RunService.Heartbeat:Connect(function(dt)
+        if not running or not hrp.Parent then
+            connection:Disconnect()
+            stopOrbit()
+            return
+        end
+
+        -- Movimento louco: sin/cos para órbita 3D randomizada
+        t = t + dt * 5
+        local x = math.sin(t * 2) * radius
+        local y = math.cos(t * 3) * radius / 2
+        local z = math.sin(t * 4) * radius
+        bp.Position = hrp.Position + Vector3.new(x, y, z)
+    end)
+end
+
+-- Toggle Bola Orbit Louca
+Troll:AddToggle({
+    Name = "Orbit Ball V2",
+    Default = false,
+    Callback = function(state)
+        if state then
+            OrbitBallCrazy()
+            print("Bola Orbit Louca Ligada")
+        else
+            if stopOrbit then
+                stopOrbit()
+                stopOrbit = nil
+                print("Bola Orbit Louca Desligada")
+            end
+        end
+    end
+})
