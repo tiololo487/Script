@@ -64,16 +64,25 @@ Troll:AddButton({
     Name = "Refresh Player List",
     Callback = function()
         local newList = getPlayerList()
+
+        -- Atualiza opções do dropdown dependendo da biblioteca
         if playerDropdown.Refresh then
-            playerDropdown:Refresh(newList) -- biblioteca suporta Refresh
+            playerDropdown:Refresh(newList) -- se a library tiver Refresh
         elseif playerDropdown.SetOptions then
-            playerDropdown:SetOptions(newList)
+            playerDropdown:SetOptions(newList) -- se tiver SetOptions
+        elseif playerDropdown.UpdateOptions then
+            playerDropdown:UpdateOptions(newList) -- outra possível função
+        else
+            warn("Dropdown não suporta atualização automática de opções")
         end
 
-        if selectedPlayerName and not Players:FindFirstChild(selectedPlayerName) then
+        -- Resetar seleção se o jogador atual não existir mais
+        if selectedPlayerName and not game.Players:FindFirstChild(selectedPlayerName) then
             selectedPlayerName = nil
             if playerDropdown.Set then
-                playerDropdown:Set("")
+                playerDropdown:Set("") -- reseta valor selecionado
+            elseif playerDropdown.SetValue then
+                playerDropdown:SetValue("") -- outra possibilidade de função
             end
         end
     end
