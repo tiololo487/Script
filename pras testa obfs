@@ -77,14 +77,13 @@ Troll:AddButton({
     end
 })
 
-local stopFling = nil
+local stopBallLoop = nil
 
-local function FlingBall(target)
+local function BallVerticalLoop(target)
     local Players = game:GetService("Players")
     local ReplicatedStorage = game:GetService("ReplicatedStorage")
     local player = Players.LocalPlayer
     local character = player.Character or player.CharacterAdded:Wait()
-    local humanoid = character:WaitForChild("Humanoid")
     local backpack = player:WaitForChild("Backpack")
     local WorkspaceCom = workspace:WaitForChild("WorkspaceCom")
     local ServerBalls = WorkspaceCom:WaitForChild("001_SoccerBalls")
@@ -127,7 +126,7 @@ local function FlingBall(target)
         end
     end
 
-    -- Cria BodyPosition para o movimento lateral dentro do torso
+    -- Cria BodyPosition para manter a bola no torso
     local bp = Instance.new("BodyPosition")
     bp.MaxForce = Vector3.new(1e6,1e6,1e6)
     bp.P = 5e4
@@ -135,44 +134,219 @@ local function FlingBall(target)
     bp.Position = torso.Position
     bp.Parent = Ball
 
-    local direction = 1
-    local distance = 3 -- amplitude lateral dentro do torso
-    local height = 1.5 -- altura dentro do torso
     local running = true
+    local direction = 1
+    local heightRange = 5 -- altura máxima de cima para baixo
 
-    stopFling = function()
+    stopBallLoop = function()
         running = false
         if bp then bp:Destroy() end
     end
 
-    -- Loop contínuo para mover a bola
-    spawn(function()
-        while running and torso.Parent and tchar:FindFirstChild("Humanoid") and tchar.Humanoid.Health > 0 do
-            direction = direction * -1
-            local offset = torso.CFrame.RightVector * (distance * direction)
-            bp.Position = torso.Position + offset + Vector3.new(0, height, 0)
-            task.wait(0.03)
+    -- Loop contínuo vertical
+    local RunService = game:GetService("RunService")
+    local connection
+    connection = RunService.Heartbeat:Connect(function()
+        if not running or not torso.Parent or not tchar:FindFirstChild("Humanoid") or tchar.Humanoid.Health <= 0 then
+            connection:Disconnect()
+            stopBallLoop()
+            return
         end
-        stopFling()
+
+        -- Reposiciona imediatamente se cair no chão
+        if Ball.Position.Y < torso.Position.Y - heightRange then
+            bp.Position = torso.Position + Vector3.new(0, heightRange/2, 0)
+        else
+            -- Movimento vertical contínuo
+            direction = direction * -1
+            local offset = Vector3.new(0, (heightRange/2) * direction, 0)
+            bp.Position = torso.Position + offset
+        end
     end)
 end
 
--- Toggle Fling Ball
+-- Toggle Bola Vertical
 Troll:AddToggle({
-    Name = "Fling Ball Torso",
+    Name = "Ball Vertical Loop",
     Default = false,
     Callback = function(state)
         local target = game.Players:FindFirstChild(selectedPlayerName)
         if state then
             if target then
-                FlingBall(target)
+                BallVerticalLoop(target)
+                print("Bola Vertical Ligada")
             else
-                print("Selecione um jogador!")
+                warn("Selecione um jogador!")
             end
         else
-            if stopFling then
-                stopFling()
-                stopFling = nil
+            if stopBallLoop then
+                stopBallLoop()
+                stopBallLoop = nil
+                print("Bola Vertical Desligada")
+            end
+        end
+    end
+})
+
+local stopOrbit = nil
+
+local function OrbitBallCrazy()
+    local Players = game:GetService("Players")
+    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+    local player = Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local hrp = character:WaitForChild("HumanoidRootPart")
+    local backpack = player:WaitForChild("Backpack")
+    local WorkspaceCom = workspace:WaitForChild("WorkspaceCom")
+    local ServerBalls = WorkspaceCom:WaitForChild("001_SoccerBalls")
+
+    -- Função para pegar a bola
+    local function GetBall()
+        local ballName = "Soccer" .. player.Name
+        local Ball = ServerBalls:FindFirstChild(ballName)
+        if not Ball then
+            local tool = ReplicatedStorage:FindFirstChild("RE") and ReplicatedStorage.RE:FindFirstChild("1Too1l")
+            if tool then
+                tool:InvokeServer("PickingTools", "SoccerBall")
+                repeat task.wait() until backpack:FindFirstChild("SoccerBall")
+                backpack.SoccerBall.Parent = character
+                repeat task.wait() until ServerBalls:FindFirstChild(ballName)
+                Ball = ServerBalls:FindFirstChild(ballName)
+            end
+        end
+        return Ball
+    end
+
+    local Ball = GetBall()
+    if not Ball then return end
+
+    Ball.CanCollide = false
+    Ball.Massless = true
+    Ball.CustomPhysicalProperties = PhysicalProperties.new(0.0001,0,0)
+
+    -- Limpar objetos físicos antigos
+    for _, v in pairs(Ball:GetChildren()) do
+        if v:IsA("BodyPosition") or v:IsA("BodyVelocity") or v:IsA("BodyGyro") or v:IsA("BodyAngularVelocity") then
+            v:Destroy()
+        end
+    end
+
+    -- BodyPosition para orbitar
+    local bp = Instance.new("BodyPosition")
+    bp.MaxForce = Vector3.new(1e6,1e6,1e6)
+    bp.P = 5e4
+    bp.D = 100
+    bp.Position = hrp.Position
+    bp.Parent = Ball
+
+    -- BodyAngularVelocity para giro louco extremo
+    local bav = Instance.new("BodyAngularVelocity")
+    bav.MaxTorque = Vector3.new(1e6,1e6,1e6)
+    bav.AngularVelocity = Vector3.new(9e800,9e800,9e800) -- velocidade máxima louca
+    bav.Parent = Ball
+
+    local running = true
+    local radius = 5
+    local t = 0
+
+    stopOrbit = function()
+        running = false
+        if bp then bp:Destroy() end
+        if bav then bav:Destroy() end
+    end
+
+    local RunService = game:GetService("RunService")
+    local connection
+    connection = RunService.Heartbeat:Connect(function(dt)
+        if not running or not hrp.Parent then
+            connection:Disconnect()
+            stopOrbit()
+            return
+        end
+
+        -- Movimento louco: sin/cos para órbita 3D randomizada
+        t = t + dt * 5
+        local x = math.sin(t * 2) * radius
+        local y = math.cos(t * 3) * radius / 2
+        local z = math.sin(t * 4) * radius
+        bp.Position = hrp.Position + Vector3.new(x, y, z)
+    end)
+end
+
+-- Toggle Bola Orbit Louca
+Troll:AddToggle({
+    Name = "Orbit Ball Louca Ultra",
+    Default = false,
+    Callback = function(state)
+        if state then
+            OrbitBallCrazy()
+            print("Bola Orbit Louca Ligada")
+        else
+            if stopOrbit then
+                stopOrbit()
+                stopOrbit = nil
+                print("Bola Orbit Louca Desligada")
+            end
+        end
+    end
+})
+
+local stopAura = nil
+
+local function FlingAura()
+    local Players = game:GetService("Players")
+    local RunService = game:GetService("RunService")
+    local player = Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local hrp = character:WaitForChild("HumanoidRootPart")
+    local radius = 10 -- raio da aura
+    local forcePower = 5000 -- força do arremesso
+
+    local running = true
+    stopAura = function()
+        running = false
+    end
+
+    local connection
+    connection = RunService.Heartbeat:Connect(function()
+        if not running or not hrp.Parent then
+            connection:Disconnect()
+            stopAura()
+            return
+        end
+
+        for _, obj in pairs(workspace:GetDescendants()) do
+            if obj:IsA("BasePart") and not obj.Anchored and obj.Parent ~= character then
+                local distance = (obj.Position - hrp.Position).Magnitude
+                if distance <= radius then
+                    -- Cria BodyVelocity para arremessar
+                    if not obj:FindFirstChild("TempFling") then
+                        local bv = Instance.new("BodyVelocity")
+                        bv.Name = "TempFling"
+                        bv.MaxForce = Vector3.new(1e6,1e6,1e6)
+                        bv.Velocity = (obj.Position - hrp.Position).Unit * forcePower + Vector3.new(0, forcePower/2, 0)
+                        bv.Parent = obj
+                        game:GetService("Debris"):AddItem(bv, 0.1) -- destrói após 0.1s
+                    end
+                end
+            end
+        end
+    end)
+end
+
+-- Toggle Aura Fling
+Troll:AddToggle({
+    Name = "Aura Fling",
+    Default = false,
+    Callback = function(state)
+        if state then
+            FlingAura()
+            print("Aura Fling Ligada")
+        else
+            if stopAura then
+                stopAura()
+                stopAura = nil
+                print("Aura Fling Desligada")
             end
         end
     end
