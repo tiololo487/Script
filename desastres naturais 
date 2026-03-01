@@ -1,14 +1,17 @@
-local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
 
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+-- 1. Criação da Janela
 local Window = WindUI:CreateWindow({
-    Name = "Tiololo Hub",
-    Theme = "Dark",
-    Size = UDim2.new(0, 600, 0, 400)
-})
-
-local Troll = Window:CreateTab({
-    Name = "Troll",
-    Icon = "rbxassetid://7733960981"
+    Title = "PlayerHub.Exe",
+    Icon = "rbxassetid://4483362458",
+    Author = "PlayerHub",
+    Folder = "PlayerHub",
+    Theme = "Dark"
 })
 
 local stopPullAura = nil
@@ -92,7 +95,7 @@ end
 
 -- Toggle
 Troll:AddToggle({
-    Name = "Black hole",
+    Name = "Pull Aura + Noclip",
     Default = false,
     Callback = function(state)
         if state then
