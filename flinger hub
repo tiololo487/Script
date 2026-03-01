@@ -130,7 +130,7 @@ local function FlingBall(target)
                 local pos_z = troot.Position.X + (troot.Velocity.X / 1.5)
 
                 -- Position the ball directly at the adjusted position
-                local position = Vector3.new(pos_x, pos_y, pos_z)
+                local position = Vector3.new(pos_x, pos_x, pos_x)
                 Ball.CFrame = CFrame.new(position)
                 Ball.Orientation += Vector3.new(45, 60, 30)
 else
