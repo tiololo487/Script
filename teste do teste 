@@ -80,77 +80,87 @@ Troll:AddButton({
 local stopFling = nil
 
 local function FlingBall(target)
-    local Players = game:GetService("Players")
-    local player = Players.LocalPlayer
+    local players = game:GetService("Players")
+    local player = players.LocalPlayer
     local character = player.Character or player.CharacterAdded:Wait()
     local humanoid = character:WaitForChild("Humanoid")
+    local hrp = character:WaitForChild("HumanoidRootPart")
     local backpack = player:WaitForChild("Backpack")
-    local ServerBalls = workspace:WaitForChild("WorkspaceCom"):WaitForChild("001_SoccerBalls")
+    local ServerBalls = workspace.WorkspaceCom:WaitForChild("001_SoccerBalls")
 
-    -- Função para pegar a bola
     local function GetBall()
-        local ballName = "Soccer" .. player.Name
-        local Ball = ServerBalls:FindFirstChild(ballName)
-        if not Ball then
-            local tool = game:GetService("ReplicatedStorage").RE:FindFirstChild("1Too1l")
-            if tool then
-                tool:InvokeServer("PickingTools", "SoccerBall")
-                repeat task.wait() until backpack:FindFirstChild("SoccerBall")
-                backpack.SoccerBall.Parent = character
-                repeat task.wait() until ServerBalls:FindFirstChild(ballName)
-                Ball = ServerBalls:FindFirstChild(ballName)
-            end
+        if not backpack:FindFirstChild("SoccerBall") then
+            game:GetService("ReplicatedStorage").RE:FindFirstChild("1Too1l"):InvokeServer("PickingTools", "SoccerBall")
         end
-        return Ball
+        repeat task.wait() until backpack:FindFirstChild("SoccerBall")
+        backpack.SoccerBall.Parent = character
+        repeat task.wait() until ServerBalls:FindFirstChild("Soccer" .. player.Name)
+        character.SoccerBall.Parent = backpack
+        return ServerBalls:FindFirstChild("Soccer" .. player.Name)
     end
 
-    local Ball = GetBall()
-    if not Ball then return end
-
+    local Ball = ServerBalls:FindFirstChild("Soccer" .. player.Name) or GetBall()
     Ball.CanCollide = false
     Ball.Massless = true
-    Ball.CustomPhysicalProperties = PhysicalProperties.new(0.0001,0,0)
+    Ball.CustomPhysicalProperties = PhysicalProperties.new(0.0001, 0, 0)
 
-    -- Checa alvo válido
     if not target or target == player then return end
     local tchar = target.Character
     if not tchar then return end
-    local torso = tchar:FindFirstChild("UpperTorso") or tchar:FindFirstChild("Torso")
-    if not torso then return end
+    local troot = tchar:FindFirstChild("HumanoidRootPart")
+    local thum = tchar:FindFirstChild("Humanoid")
+    if not troot or not thum then return end
 
-    -- Remove BodyVelocity antiga
-    for _, v in pairs(Ball:GetChildren()) do
-        if v:IsA("BodyVelocity") then v:Destroy() end
+    if Ball:FindFirstChildWhichIsA("BodyVelocity") then
+        Ball:FindFirstChildWhichIsA("BodyVelocity"):Destroy()
     end
 
-    -- Lateral movement arrastando
+    -- BodyPosition para arrastar a bola lateralmente
+    local bp = Instance.new("BodyPosition")
+    bp.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+    bp.P = 25000
+    bp.D = 10
+    bp.Parent = Ball
+
+    workspace.CurrentCamera.CameraSubject = thum
+
     local direction = 1
     local distance = 6
+    local maxDistance = 4 -- distância máxima do player
     local running = true
-
     stopFling = function()
         running = false
+        if bp then bp:Destroy() end
+        workspace.CurrentCamera.CameraSubject = humanoid
     end
 
-    spawn(function()
-        while running and torso.Parent and tchar:FindFirstChild("Humanoid").Health > 0 do
-            direction = direction * -1
-            -- Bola centralizada no torso, movendo lateralmente
-            Ball.CFrame = CFrame.new(torso.Position + torso.CFrame.RightVector * (distance * direction))
-            task.wait(0.03) -- velocidade máxima
+    while running and tchar:IsDescendantOf(workspace) and thum.Health > 0 do
+        direction = direction * -1
+        local offset = troot.CFrame.RightVector * (distance * direction)
+
+        -- limita a distância máxima lateral
+        if offset.Magnitude > maxDistance then
+            offset = offset.Unit * maxDistance
         end
-    end)
+
+        bp.Position = troot.Position + offset + Vector3.new(0, 2, 0)
+        task.wait(0.15)
+    end
+
+    stopFling()
 end
 
--- Toggle Fling Ball
 Troll:AddToggle({
-    Name = "Fling Ball",
+    Name = "Fling Ball", um
     Default = false,
     Callback = function(state)
-        local target = game.Players:FindFirstChild(selectedPlayerName)
+        local target = game:GetService("Players"):FindFirstChild(selectedPlayerName)
         if state then
             if target then
-                FlingBall(target)
+                print("Fling Ligado")
+                spawn(function()
+                    FlingBall(target)
+                end)
             else
                 print("Selecione um jogador!")
             end
@@ -158,6 +168,7 @@ Troll:AddToggle({
             if stopFling then
                 stopFling()
                 stopFling = nil
+              ("Fling Desligado")
             end
         end
     end
