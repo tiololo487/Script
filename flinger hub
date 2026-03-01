@@ -360,7 +360,7 @@ local function BallVerticalLoop(target)
 
     local running = true
     local direction = 1
-    local heightRange = 5 -- altura máxima de cima para baixo
+    local heightRange = 1 -- altura máxima de cima para baixo
 
     stopBallLoop = function()
         running = false
