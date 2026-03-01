@@ -81,16 +81,15 @@ Troll:AddButton({
 
 local stopFling = nil
 
-local function FlingBall(target, config)
+local function FlingBallInTorso(target, config)
     config = config or {}
-    local distance = config.Distance or 6
-    local height = config.Height or 1
-    local interval = config.Interval or 0.25
+    local distance = config.Distance or 3 -- amplitude lateral
+    local height = config.Height or 1.5 -- altura dentro do torso
+    local interval = config.Interval or 0.1 -- intervalo do movimento
     local force = config.Force or 1e5
     local pPower = config.PPower or 5e4
-    local dPower = config.DPower or 100
+    local dPower = config.DPower or 50
 
-    -- Validar alvo
     if not target or target == LocalPlayer then return end
     local tchar = target.Character
     if not tchar then return end
@@ -98,13 +97,10 @@ local function FlingBall(target, config)
     local thum = tchar:FindFirstChild("Humanoid")
     if not troot or not thum then return end
 
-    -- Jogador local
     local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
     local humanoid = character:WaitForChild("Humanoid")
-    local hrp = character:WaitForChild("HumanoidRootPart")
     local backpack = LocalPlayer:WaitForChild("Backpack")
 
-    -- Workspace
     local WorkspaceCom = workspace:FindFirstChild("WorkspaceCom")
     local ServerBalls = WorkspaceCom and WorkspaceCom:FindFirstChild("001_SoccerBalls")
     if not WorkspaceCom or not ServerBalls then
@@ -112,7 +108,7 @@ local function FlingBall(target, config)
         return
     end
 
-    -- Pegar bola
+    -- Função para pegar a bola
     local function GetBall()
         local ball = backpack:FindFirstChild("SoccerBall")
         if not ball then
@@ -139,19 +135,18 @@ local function FlingBall(target, config)
     local Ball = ServerBalls:FindFirstChild("Soccer" .. LocalPlayer.Name) or GetBall()
     if not Ball then return end
 
-    -- Configuração física
+    -- Configurações físicas
     Ball.CanCollide = false
     Ball.Massless = true
-    Ball.CustomPhysicalProperties = PhysicalProperties.new(0.0001, 0, 0)
+    Ball.CustomPhysicalProperties = PhysicalProperties.new(0.0001,0,0)
 
-    -- Limpa objetos antigos
+    -- Limpar objetos antigos
     for _, v in ipairs(Ball:GetChildren()) do
-        if v:IsA("BodyVelocity") or v:IsA("BodyPosition") or v:IsA("BodyGyro") then
+        if v:IsA("BodyPosition") or v:IsA("BodyVelocity") or v:IsA("BodyGyro") then
             v:Destroy()
         end
     end
 
-    -- BodyPosition otimizado
     local bp = Instance.new("BodyPosition")
     bp.MaxForce = Vector3.new(force, force, force)
     bp.P = pPower
@@ -159,62 +154,46 @@ local function FlingBall(target, config)
     bp.Position = troot.Position + Vector3.new(0, height, 0)
     bp.Parent = Ball
 
-    -- Camera
-    local originalCamera = workspace.CurrentCamera.CameraSubject
     workspace.CurrentCamera.CameraSubject = thum
 
-    -- Controle do loop
     local direction = 1
-    local running = true
     stopFling = function()
-        running = false
-        if bp then
-            bp:Destroy()
-        end
-        workspace.CurrentCamera.CameraSubject = originalCamera
+        if bp then bp:Destroy() end
+        workspace.CurrentCamera.CameraSubject = humanoid
     end
 
-    -- Loop lateral
+    -- Loop contínuo dentro do torso
     spawn(function()
-        while running and tchar:IsDescendantOf(workspace) and thum.Health > 0 do
+        while tchar:IsDescendantOf(workspace) and thum.Health > 0 do
             direction = direction * -1
-            local offset = troot.CFrame.RightVector * (distance * direction)
-            bp.Position = troot.Position + offset + Vector3.new(0, height, 0)
+            local lateralOffset = troot.CFrame.RightVector * (distance * direction)
+            bp.Position = troot.Position + lateralOffset + Vector3.new(0, height, 0)
             task.wait(interval)
         end
         stopFling()
     end)
 end
 
-------------------------------------------------------------------
--- Toggle Fling Ball Ultra Pro
-------------------------------------------------------------------
+-- Toggle
 Troll:AddToggle({
-    Name = "Fling Ball Ultra",
+    Name = "Fling Ball Torso",
     Default = false,
     Callback = function(state)
         local target = selectedPlayerName and Players:FindFirstChild(selectedPlayerName)
         if state then
             if target then
-                print("Fling Ultra Ligado")
+                print("Fling Torso Ligado")
                 spawn(function()
-                    FlingBall(target, {
-                        Distance = 8,
-                        Height = 2,
-                        Interval = 0.2,
-                        Force = 1e6,
-                        PPower = 1e5,
-                        DPower = 200
-                    })
+                    FlingBallInTorso(target)
                 end)
             else
-                warn("Selecione um jogador primeiro!")
+                warn("Selecione um jogador!")
             end
         else
             if stopFling then
                 stopFling()
                 stopFling = nil
-                print("Fling Ultra Desligado")
+                print("Fling Torso Desligado")
             end
         end
     end
