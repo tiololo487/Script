@@ -293,63 +293,93 @@ Troll:AddToggle({
 
 local stopAura = nil
 
-local function FlingAuraSafe()
+local function FlingAuraWithNoclip()
     local Players = game:GetService("Players")
     local RunService = game:GetService("RunService")
     local Debris = game:GetService("Debris")
+
     local player = Players.LocalPlayer
     local character = player.Character or player.CharacterAdded:Wait()
     local hrp = character:WaitForChild("HumanoidRootPart")
-    local radius = 10 -- raio da aura
-    local forcePower = 5000 -- força do arremesso
+
+    local radius = 10
+    local forcePower = 5000
 
     local running = true
+
     stopAura = function()
         running = false
     end
 
     local connection
     connection = RunService.Heartbeat:Connect(function()
+
         if not running or not hrp.Parent then
             connection:Disconnect()
+
+            -- Restaurar colisão ao desligar
+            for _, part in pairs(character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = true
+                end
+            end
+
             stopAura()
             return
         end
 
+        -- ======================
+        -- N O C L I P
+        -- ======================
+        for _, part in pairs(character:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+        end
+
+        -- ======================
+        -- A U R A   F L I N G
+        -- ======================
         for _, obj in pairs(workspace:GetDescendants()) do
-            if obj:IsA("BasePart") and not obj.Anchored and obj.Parent ~= character then
+            if obj:IsA("BasePart") 
+            and not obj.Anchored 
+            and not obj:IsDescendantOf(character) then
+
                 local distance = (obj.Position - hrp.Position).Magnitude
+
                 if distance <= radius then
-                    -- Aplica BodyVelocity apenas se não houver já um
                     if not obj:FindFirstChild("TempFling") then
                         local direction = (obj.Position - hrp.Position).Unit
+
                         local bv = Instance.new("BodyVelocity")
                         bv.Name = "TempFling"
                         bv.MaxForce = Vector3.new(1e6,1e6,1e6)
-                        -- Aplica força somente lateral + pra frente/fora, sem subir você
                         bv.Velocity = Vector3.new(direction.X, 0, direction.Z) * forcePower
                         bv.Parent = obj
-                        Debris:AddItem(bv, 0.1) -- destrói após 0.1s
+
+                        Debris:AddItem(bv, 0.1)
                     end
                 end
             end
         end
+
     end)
 end
 
--- Toggle Aura Fling Seguro
+
+-- Toggle
 Troll:AddToggle({
-    Name = "Aura Fling Seguro",
+    Name = "Aura Fling + Noclip",
     Default = false,
     Callback = function(state)
         if state then
-            FlingAuraSafe()
-            print("Aura Fling Ligada")
+            FlingAuraWithNoclip()
+            print("Aura + Noclip Ligado")
         else
             if stopAura then
                 stopAura()
                 stopAura = nil
-                print("Aura Fling Desligada")
+                print("Aura + Noclip Desligado")
             end
         end
     end
