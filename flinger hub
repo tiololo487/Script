@@ -389,28 +389,7 @@ local function BallVerticalLoop(target)
     end)
 end
 
--- Toggle Bola Vertical
-Troll:AddToggle({
-    Name = "Fling ball V2",
-    Default = false,
-    Callback = function(state)
-        local target = game.Players:FindFirstChild(selectedPlayerName)
-        if state then
-            if target then
-                BallVerticalLoop(target)
-                print("Bola Vertical Ligada")
-            else
-                warn("Selecione um jogador!")
-            end
-        else
-            if stopBallLoop then
-                stopBallLoop()
-                stopBallLoop = nil
-                print("Bola Vertical Desligada")
-            end
-        end
-    end
-})
+
 
 local stopFrontBall = nil
 
@@ -469,14 +448,14 @@ local function FrontBallSpin()
     -- Manter 5 studs na frente
     local bp = Instance.new("BodyPosition")
     bp.MaxForce = Vector3.new(1e6,1e6,1e6)
-    bp.P = 5e4
-    bp.D = 100
+    bp.P = 99999999999999e99999999999999
+    bp.D = 100000000000
     bp.Parent = Ball
 
     -- Giro em volta dela mesma
     local bav = Instance.new("BodyAngularVelocity")
-    bav.MaxTorque = Vector3.new(1e6,1e6,1e6)
-    bav.AngularVelocity = Vector3.new(9e800, 9e800, 9e800)
+    bav.MaxTorque = Vector3.new(9999999999e9999999,999999999e9999999,9999999e9999)
+    bav.AngularVelocity = Vector3.new(999999999999e9999999, 99999999999e99999999, 9999999999e99999999)
     bav.Parent = Ball
 
     local running = true
