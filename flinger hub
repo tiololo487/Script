@@ -786,7 +786,7 @@ local audios = {
 local selectedAudioID
 
 -- Add a textbox to insert the audio ID
-Tab:AddTextBox({
+Troll:AddTextBox({
     Name = "Insert Audio or Music ID",
     Description = "Type the audio ID",
     PlaceholderText = "Audio ID",
@@ -801,7 +801,7 @@ for _, audio in ipairs(audios) do
     table.insert(audioNames, audio.Name)
 end
 
-Tab:AddDropdown({
+Troll:AddDropdown({
     Name = "Select Audio",
     Description = "Choose an audio from the list",
     Options = audioNames,
@@ -821,7 +821,7 @@ Tab:AddDropdown({
 local audioLoop = false
 
 -- New section for audio loop
-Tab:AddSection({"Audio Loop"})
+Troll:AddSection({"Audio Loop"})
 
 -- Function to play audio repeatedly
 local function playLoopedAudio()
@@ -848,7 +848,7 @@ local function playLoopedAudio()
 end
 
 -- Toggle for audio loop
-Tab:AddToggle({
+Troll:AddToggle({
     Name = "Loop Play Audio",
     Description = "Activates the audio loop",
     Default = false,
@@ -862,7 +862,7 @@ Tab:AddToggle({
 })
 
 -- Add a paragraph as a label
-Tab:AddParagraph({"Info", "Loop audio playback (All players in the server can hear)"})
+Troll:AddParagraph({"Info", "Loop audio playback (All players in the server can hear)"})
 
 -- Function to play normal audio
 local function playAudio()
@@ -885,10 +885,10 @@ local function playAudio()
 end
 
 -- New section for playing audio
-Tab:AddSection({"Play Audio"})
+Troll:AddSection({"Play Audio"})
 
 -- Button to play the audio
-Tab:AddButton({"Play Audio", function()
+Troll:AddButton({"Play Audio", function()
     playAudio()
 end})
 
@@ -941,7 +941,7 @@ local function Audio_All_ServerSide(ID)
 end
 
 -- Toggle for "Burst everyone's eardrums"
-Tab:AddToggle({
+Troll:AddToggle({
     Name = "Burst Eardrums LOL",
     Description = "Plays audio repeatedly for everyone",
     Default = false,
