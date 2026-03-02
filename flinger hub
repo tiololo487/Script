@@ -737,3 +737,224 @@ Troll:AddToggle({
         end
     end
 })
+
+Troll:AddSection({"Audio for All Players"})
+
+-- Audio list
+local audios = {
+    {Name = "Yamete Kudasai", ID = 108494476595033},
+    {Name = "Scream", ID = 5710016194},
+    {Name = "Horror Jumpscare", ID = 85435253347146},
+    {Name = "Loud Audio", ID = 6855150757},
+    {Name = "Noise", ID = 120034877160791},
+    {Name = "Jumpscare 2", ID = 110637995610528},
+    {Name = "Minecraft Witch Laugh", ID = 116214940486087},
+    {Name = "The Boiled One", ID = 137177653817621},
+    {Name = "Crazy Hail Mary", ID = 128669424001766},
+    {Name = "Mandrake Detected", ID = 9068077052},
+    {Name = "Aaaaaaaaa", ID = 80156405968805},
+    {Name = "AAAHHHH", ID = 9084006093},
+    {Name = "amongus", ID = 6651571134},
+    {Name = "Sus", ID = 6701126635},
+    {Name = "Big Scream AAAAAAAAA", ID = 5853668794},
+    {Name = "UHHHHH COFFCOFF", ID = 7056720271},
+    {Name = "SUS", ID = 7153419575},
+    {Name = "Sonic.exe", ID = 2496367477},
+    {Name = "Yellow Hub93 1", ID = 270145703},
+    {Name = "Yellow Hub93 2", ID = 18131809532},
+    {Name = "John's Laugh", ID = 130759239},
+    {Name = "No Idea LOL", ID = 6549021381},
+    {Name = "Screaming", ID = 80156405968805},
+    {Name = "Sus Audio", ID = 7705506391},
+    {Name = "AAAH", ID = 7772283448},
+    {Name = "Gay, gay", ID = 18786647417},
+    {Name = "Bat Hit", ID = 7129073354},
+    {Name = "Nuclear Siren", ID = 675587093},
+    {Name = "No idea for a name LOL", ID = 7520729342},
+    {Name = "Scream 2", ID = 91412024101709},
+    {Name = "Eardrum Buster", ID = 268116333},
+    {Name = "Annoying Moan", ID = 106835463235574},
+    {Name = "Meme Sound Clip", ID = 132603645477541},
+    {Name = "iFood Ad", ID = 133843750864059},
+    {Name = "I Ghost The down", ID = 84663543883498},
+    {Name = "Shop Online at Shopee", ID = 8747441609},
+    {Name = "Uh, So Gross", ID = 103440368630269},
+    {Name = "Get Out, Go Wash Dishes", ID = 101232400175829},
+    {Name = "Meme Quote", ID = 78442476709262},
+}
+
+local selectedAudioID
+
+-- Add a textbox to insert the audio ID
+Tab:AddTextBox({
+    Name = "Insert Audio or Music ID",
+    Description = "Type the audio ID",
+    PlaceholderText = "Audio ID",
+    Callback = function(value)
+        selectedAudioID = tonumber(value)
+    end
+})
+
+-- Add a dropdown to select the audio
+local audioNames = {}
+for _, audio in ipairs(audios) do
+    table.insert(audioNames, audio.Name)
+end
+
+Tab:AddDropdown({
+    Name = "Select Audio",
+    Description = "Choose an audio from the list",
+    Options = audioNames,
+    Default = audioNames[1],
+    Flag = "selected_audio",
+    Callback = function(value)
+        for _, audio in ipairs(audios) do
+            if audio.Name == value then
+                selectedAudioID = audio.ID
+                break
+            end
+        end
+    end
+})
+
+-- Loop control
+local audioLoop = false
+
+-- New section for audio loop
+Tab:AddSection({"Audio Loop"})
+
+-- Function to play audio repeatedly
+local function playLoopedAudio()
+    while audioLoop do
+        if selectedAudioID then
+            local args = {
+                [1] = game:GetService("Workspace"),
+                [2] = selectedAudioID,
+                [3] = 1,
+            }
+            game:GetService("ReplicatedStorage").RE:FindFirstChild("1Gu1nSound1s"):FireServer(unpack(args))
+
+            -- Create and play the audio
+            local sound = Instance.new("Sound")
+            sound.SoundId = "rbxassetid://" .. selectedAudioID
+            sound.Parent = game.Players.LocalPlayer.Character.HumanoidRootPart
+            sound:Play()
+        else
+            warn("No audio selected!")
+        end
+
+        task.wait(0.5) -- Small delay to avoid overload
+    end
+end
+
+-- Toggle for audio loop
+Tab:AddToggle({
+    Name = "Loop Play Audio",
+    Description = "Activates the audio loop",
+    Default = false,
+    Flag = "audio_loop",
+    Callback = function(value)
+        audioLoop = value
+        if audioLoop then
+            task.spawn(playLoopedAudio) -- Start the loop in a new thread
+        end
+    end
+})
+
+-- Add a paragraph as a label
+Tab:AddParagraph({"Info", "Loop audio playback (All players in the server can hear)"})
+
+-- Function to play normal audio
+local function playAudio()
+    if selectedAudioID then
+        local args = {
+            [1] = game:GetService("Workspace"),
+            [2] = selectedAudioID,
+            [3] = 1,
+        }
+        game:GetService("ReplicatedStorage").RE:FindFirstChild("1Gu1nSound1s"):FireServer(unpack(args))
+
+        -- Create and play the audio
+        local sound = Instance.new("Sound")
+        sound.SoundId = "rbxassetid://" .. selectedAudioID
+        sound.Parent = game.Players.LocalPlayer.Character.HumanoidRootPart
+        sound:Play()
+    else
+        warn("No audio selected!")
+    end
+end
+
+-- New section for playing audio
+Tab:AddSection({"Play Audio"})
+
+-- Button to play the audio
+Tab:AddButton({"Play Audio", function()
+    playAudio()
+end})
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local audioID = 6314880174 -- Fixed audio ID
+
+local function Audio_All_ClientSide(ID)
+    local function CheckFolderAudioAll()
+        local FolderAudio = workspace:FindFirstChild("Audio all client")
+        if not FolderAudio then
+            FolderAudio = Instance.new("Folder")
+            FolderAudio.Name = "Audio all client"
+            FolderAudio.Parent = workspace
+        end
+        return FolderAudio
+    end
+
+    local function CreateSound(ID)
+        if type(ID) ~= "number" then
+            print("Insert a valid number!")
+            return nil
+        end
+
+        local Folder_Audio = CheckFolderAudioAll()
+        if Folder_Audio then
+            local Sound = Instance.new("Sound")
+            Sound.SoundId = "rbxassetid://" .. ID
+            Sound.Volume = 1
+            Sound.Looped = false
+            Sound.Parent = Folder_Audio
+            Sound:Play()
+            task.wait(1) -- Wait time before removing the sound
+            Sound:Destroy()
+        end
+    end
+
+    CreateSound(ID)
+end
+
+local function Audio_All_ServerSide(ID)
+    if type(ID) ~= "number" then
+        print("Insert a valid number!")
+        return nil
+    end
+
+    local GunSoundEvent = ReplicatedStorage:FindFirstChild("1Gu1nSound1s", true)
+    if GunSoundEvent then
+        GunSoundEvent:FireServer(workspace, ID, 1)
+    end
+end
+
+-- Toggle for "Burst everyone's eardrums"
+Tab:AddToggle({
+    Name = "Burst Eardrums LOL",
+    Description = "Plays audio repeatedly for everyone",
+    Default = false,
+    Flag = "audio_spam",
+    Callback = function(value)
+        getgenv().Audio_All_loop_fast = value
+
+        while getgenv().Audio_All_loop_fast do
+            Audio_All_ServerSide(audioID)
+            task.spawn(function()
+                Audio_All_ClientSide(audioID)
+            end)
+            task.wait(0.03) -- Extremely fast delay (0.03 seconds)
+        end
+    end
+})
