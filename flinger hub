@@ -721,7 +721,7 @@ Troll:AddSection({"Audio for All Players"})
 
 -- Audio list
 local audios = {
-    {Name = "Yamete Kudasai", ID = 108494476595033},
+    {Name = "gojo vs sukuna", ID = 118314578679702},
     {Name = "Scream", ID = 5710016194},
     {Name = "Horror Jumpscare", ID = 85435253347146},
     {Name = "Loud Audio", ID = 6855150757},
