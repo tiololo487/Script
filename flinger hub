@@ -937,3 +937,31 @@ Troll:AddToggle({
         end
     end
 })
+
+Troll:AddToggle({
+    Name = "Ativar anooy",
+    Default = false,
+    Callback = function(state)
+        crashAtivo = state
+        if crashConnection then
+            crashConnection:Disconnect()
+            crashConnection = nil
+        end
+
+        if crashAtivo then
+            if selectedPlayer then
+                crashConnection = RunService.Stepped:Connect(function()
+                    if selectedPlayer and selectedPlayer.Character then
+                        TriggerCrashOn(selectedPlayer, 10)
+                    end
+                end)
+                print("Crash ativo em: " .. selectedPlayer.Name)
+            else
+                print("Nenhum player selecionado para crash")
+                crashAtivo = false
+            end
+        else
+            print("Crash desativado")
+        end
+    end
+})
