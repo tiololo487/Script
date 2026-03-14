@@ -18,7 +18,7 @@ tool1.RequiresHandle = false
 tool1.Parent = backpack
 
 local sound = Instance.new("Sound")
-sound.SoundId = "rbxassetid://COLOQUE_SEU_AUDIO_ID_AQUI"
+sound.SoundId = "rbxassetid://135494807505771"
 sound.Looped = true
 sound.Volume = 1
 sound.Parent = workspace.CurrentCamera
