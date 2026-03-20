@@ -1,0 +1,168 @@
+local tool = script.Parent
+local player = game.Players.LocalPlayer
+local remote = tool:WaitForChild("FlingEvent")
+
+local animId = "rbxassetid://127764273000599"
+
+tool.Activated:Connect(function()
+	if not player.Character then return end
+	
+	local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+	if not humanoid then return end
+	
+	local anim = Instance.new("Animation")
+	anim.AnimationId = animId
+	
+	local track = humanoid:LoadAnimation(anim)
+	track:Play()
+	
+	remote:FireServer(true)
+	
+	track.Stopped:Connect(function()
+		remote:FireServer(false)
+	end)
+end)
+
+local tool = script.Parent
+local remote = tool:WaitForChild("FlingEvent")
+
+local active = {}
+
+remote.OnServerEvent:Connect(function(player, state)
+	if not player.Character then return end
+	
+	local char = player.Character
+	local root = char:FindFirstChild("HumanoidRootPart")
+	if not root then return end
+	
+	if state then
+		active[player] = true
+		
+		-- remover forças antigas
+		for _,v in pairs(root:GetChildren()) do
+			if v:IsA("BodyVelocity") or v:IsA("BodyAngularVelocity") then
+				v:Destroy()
+			end
+		end
+		
+		-- FORÇA PRINCIPAL
+		local bv = Instance.new("BodyVelocity")
+		bv.MaxForce = Vector3.new(1e9,1e9,1e9)
+		bv.Velocity = Vector3.zero
+		bv.Parent = root
+		
+		-- GIRO INSANO
+		local bav = Instance.new("BodyAngularVelocity")
+		bav.MaxTorque = Vector3.new(1e9,1e9,1e9)
+		bav.AngularVelocity = Vector3.new(9999,9999,9999)
+		bav.Parent = root
+		
+		task.spawn(function()
+			while active[player] and root and root.Parent do
+				-- direção pra frente (tipo chute)
+				local look = root.CFrame.LookVector
+				
+				-- VELOCIDADE EXTREMA CONTROLADA
+				root.AssemblyLinearVelocity = look * 300 + Vector3.new(0,150,0)
+				
+				-- micro teleport pra causar impacto forte
+				root.CFrame = root.CFrame * CFrame.new(0,0,-2)
+				
+				task.wait(0.03)
+			end
+			
+			if bv then bv:Destroy() end
+			if bav then bav:Destroy() end
+		end)
+		
+	else
+		active[player] = nil
+		
+		if root then
+			root.AssemblyLinearVelocity = Vector3.zero
+		end
+	end
+end)
+
+local tool = script.Parent
+local player = game.Players.LocalPlayer
+local remote = tool:WaitForChild("FlingEvent")
+
+local animId = "rbxassetid://107652660092239"
+
+tool.Activated:Connect(function()
+	if not player.Character then return end
+	
+	local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+	if not humanoid then return end
+	
+	local anim = Instance.new("Animation")
+	anim.AnimationId = animId
+	
+	local track = humanoid:LoadAnimation(anim)
+	track:Play()
+	
+	-- ativa fling
+	remote:FireServer(true)
+	
+	-- desativa quando acabar
+	track.Stopped:Connect(function()
+		remote:FireServer(false)
+	end)
+end)
+
+local tool = script.Parent
+local remote = tool:WaitForChild("FlingEvent")
+
+local active = {}
+
+remote.OnServerEvent:Connect(function(player, state)
+	if not player.Character then return end
+	
+	local char = player.Character
+	local root = char:FindFirstChild("HumanoidRootPart")
+	if not root then return end
+	
+	if state then
+		active[player] = true
+		
+		-- limpa forças antigas
+		for _,v in pairs(root:GetChildren()) do
+			if v:IsA("BodyVelocity") or v:IsA("BodyAngularVelocity") then
+				v:Destroy()
+			end
+		end
+		
+		local bv = Instance.new("BodyVelocity")
+		bv.MaxForce = Vector3.new(1e9,1e9,1e9)
+		bv.Parent = root
+		
+		local bav = Instance.new("BodyAngularVelocity")
+		bav.MaxTorque = Vector3.new(1e9,1e9,1e9)
+		bav.AngularVelocity = Vector3.new(9999,9999,9999)
+		bav.Parent = root
+		
+		task.spawn(function()
+			while active[player] and root and root.Parent do
+				
+				local look = root.CFrame.LookVector
+				
+				root.AssemblyLinearVelocity = look * 300 + Vector3.new(0,150,0)
+				
+				root.CFrame = root.CFrame * CFrame.new(0,0,-2)
+				
+				task.wait(0.03)
+			end
+			
+			if bv then bv:Destroy() end
+			if bav then bav:Destroy() end
+		end)
+		
+	else
+		active[player] = nil
+		
+		if root then
+			root.AssemblyLinearVelocity = Vector3.zero
+		end
+	end
+end)
