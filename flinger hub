@@ -433,7 +433,7 @@ local function FrontBallSpin()
 
     Ball.CanCollide = false
     Ball.Massless = true
-    Ball.CustomPhysicalProperties = PhysicalProperties.new(0.0001,0,0)
+    Ball.CustomPhysicalProperties = PhysicalProperties.new(0.0003,0,0)
 
     -- Limpar forças antigas
     for _, v in pairs(Ball:GetChildren()) do
@@ -447,15 +447,15 @@ local function FrontBallSpin()
 
     -- Manter 5 studs na frente
     local bp = Instance.new("BodyPosition")
-    bp.MaxForce = Vector3.new(1e6,1e6,1e6)
-    bp.P = 99999999999999e99999999999999
-    bp.D = 100000000000
+    bp.MaxForce = Vector3.new(9e9,9e9,9e9)
+    bp.P = 99e99
+    bp.D = 1000000
     bp.Parent = Ball
 
     -- Giro em volta dela mesma
     local bav = Instance.new("BodyAngularVelocity")
-    bav.MaxTorque = Vector3.new(9999999999e9999999,999999999e9999999,9999999e9999)
-    bav.AngularVelocity = Vector3.new(999999999999e9999999, 99999999999e99999999, 9999999999e99999999)
+    bav.MaxTorque = Vector3.new(99e99,99e99,99e99)
+    bav.AngularVelocity = Vector3.new(99e99, 99e99, 99e99)
     bav.Parent = Ball
 
     local running = true
@@ -965,3 +965,4 @@ Troll:AddToggle({
         end
     end
 })
+
