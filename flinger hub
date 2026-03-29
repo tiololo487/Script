@@ -825,7 +825,7 @@ Troll:AddToggle({
 })
 
 Troll:AddToggle({
-    Name = "Ativar Annoy",
+    Name = "Annoy PATCHED?",
     Default = false,
     Callback = function(state)
         crashAtivo = state
