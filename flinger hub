@@ -874,94 +874,205 @@ Troll:AddToggle({
     end
 })
 
+local stopBallLoop = nil
+
+local function BallFling(target)
+    local Players = game:GetService("Players")
+    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+    local RunService = game:GetService("RunService")
+    local player = Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local backpack = player:WaitForChild("Backpack")
+    local WorkspaceCom = workspace:WaitForChild("WorkspaceCom")
+    local ServerBalls = WorkspaceCom:WaitForChild("001_SoccerBalls")
+
+    -- Função para pegar a bola
+    local function GetBall()
+        local ballName = "Soccer" .. player.Name
+        local Ball = ServerBalls:FindFirstChild(ballName)
+        if not Ball then
+            local re = ReplicatedStorage:FindFirstChild("RE")
+            local tool = re and re:FindFirstChild("1Too1l")
+            if tool then
+                tool:InvokeServer("PickingTools", "SoccerBall")
+                local timeout = tick() + 5
+                repeat task.wait() until backpack:FindFirstChild("SoccerBall") or tick() > timeout
+                local sb = backpack:FindFirstChild("SoccerBall")
+                if sb then sb.Parent = character end
+                timeout = tick() + 5
+                repeat task.wait() until ServerBalls:FindFirstChild(ballName) or tick() > timeout
+                Ball = ServerBalls:FindFirstChild(ballName)
+            end
+        end
+        return Ball
+    end
+
+    local Ball = GetBall()
+    if not Ball then warn("[FlingBall] Bola não encontrada!") return end
+
+    -- Checa alvo válido
+    if not target or target == player then return end
+    local tchar = target.Character
+    if not tchar then return end
+    local torso = tchar:FindFirstChild("UpperTorso") or tchar:FindFirstChild("Torso")
+    local hum = tchar:FindFirstChildOfClass("Humanoid")
+    if not torso or not hum then return end
+
+    Ball.CanCollide = false
+    Ball.Massless = true
+    Ball.CustomPhysicalProperties = PhysicalProperties.new(0.0001, 0, 0)
+
+    -- Limpar objetos físicos antigos
+    for _, v in pairs(Ball:GetChildren()) do
+        if v:IsA("BodyPosition") or v:IsA("BodyVelocity") or
+           v:IsA("BodyGyro") or v:IsA("BodyAngularVelocity") then
+            v:Destroy()
+        end
+    end
+
+    -- Configurações do fling
+    local SWING_SPEED   = 40    -- Velocidade do balanço esquerda/direita (maior = mais rápido)
+    local SWING_WIDTH   = 3.5   -- Largura do balanço em studs
+    local SWING_DEPTH   = 0.5   -- Profundidade (frente/trás, pequena para ficar no torso)
+    local FLING_FORCE   = 5000  -- Força do fling ao detectar colisão
+    local TOUCH_RADIUS  = 2.8   -- Raio de detecção de colisão com o alvo
+
+    -- BodyPosition — começa já dentro do torso
+    local bp = Instance.new("BodyPosition")
+    bp.MaxForce = Vector3.new(1e6, 1e6, 1e6)
+    bp.P = 1e5   -- P alto para a bola ir rápido ao destino
+    bp.D = 50    -- D baixo para menos amortecimento (mais agressivo)
+    bp.Position = torso.Position
+    bp.Parent = Ball
+
+    local running = true
+    local t = 0
+    local flung = false  -- evita aplicar fling múltiplas vezes seguidas
+
+    stopBallLoop = function()
+        running = false
+        pcall(function() bp:Destroy() end)
+    end
+
+    -- Função de fling: aplica velocidade explosiva lateral + vertical no alvo
+    local function ApplyFling(targetHRP)
+        for _, v in pairs(targetHRP:GetChildren()) do
+            if v:IsA("BodyVelocity") then v:Destroy() end
+        end
+
+        -- Direção lateral aleatória pra variar o fling
+        local randX = (math.random(0, 1) == 0) and 1 or -1
+        local randZ = (math.random(0, 1) == 0) and 0.5 or -0.5
+
+        local bv = Instance.new("BodyVelocity")
+        bv.Velocity = Vector3.new(randX * FLING_FORCE, FLING_FORCE * 0.8, randZ * FLING_FORCE)
+        bv.MaxForce = Vector3.new(1e9, 1e9, 1e9)
+        bv.P = 1e6
+        bv.Parent = targetHRP
+        game:GetService("Debris"):AddItem(bv, 0.12)
+    end
+
+    local connection
+    connection = RunService.Heartbeat:Connect(function(dt)
+        -- Checa validade dos objetos
+        if not running
+           or not Ball or not Ball.Parent
+           or not torso or not torso.Parent
+           or not hum or hum.Health <= 0 then
+            connection:Disconnect()
+            if running then stopBallLoop() end
+            return
+        end
+
+        -- Balanço horizontal esquerda/direita dentro do torso
+        -- Velocidade muito alta = bola rasga o torso de lado a lado
+        t = t + dt * SWING_SPEED
+
+        local right = torso.CFrame.RightVector
+        local up    = torso.CFrame.UpVector
+        local look  = torso.CFrame.LookVector
+
+        local offsetSide  = right  * (math.sin(t) * SWING_WIDTH)
+        local offsetDepth = look   * (math.sin(t * 0.7) * SWING_DEPTH)
+        local offsetVert  = up     * (math.cos(t * 1.5) * 0.8) -- leve vibração vertical
+
+        bp.Position = torso.Position + offsetSide + offsetDepth + offsetVert
+
+        -- Detecção: quando a bola está perto do HRP do alvo, aplica fling
+        local targetHRP = tchar:FindFirstChild("HumanoidRootPart")
+        if targetHRP then
+            local dist = (Ball.Position - targetHRP.Position).Magnitude
+            if dist <= TOUCH_RADIUS then
+                if not flung then
+                    flung = true
+                    ApplyFling(targetHRP)
+                    -- Reset cooldown do flung após um tempo
+                    task.delay(0.3, function()
+                        flung = false
+                    end)
+                end
+            end
+        end
+    end)
+end
+
+-- Toggle Fling Ball V2
 Troll:AddToggle({
-    Name = "Ativar anooy",
+    Name = "Fling Ball V2",
+    Default = false,
+    Callback = function(state)
+        local target = game.Players:FindFirstChild(selectedPlayerName)
+        if state then
+            -- Limpa loop anterior se existir
+            if stopBallLoop then
+                stopBallLoop()
+                stopBallLoop = nil
+            end
+            if target then
+                BallFling(target)
+                print("[FlingBall] Ligada em: " .. target.Name)
+            else
+                warn("[FlingBall] Selecione um jogador!")
+            end
+        else
+            if stopBallLoop then
+                stopBallLoop()
+                stopBallLoop = nil
+                print("[FlingBall] Desligada")
+            end
+        end
+    end
+})
+
+Troll:AddToggle({
+    Name = "Ativar Annoy",
     Default = false,
     Callback = function(state)
         crashAtivo = state
+
         if crashConnection then
             crashConnection:Disconnect()
             crashConnection = nil
         end
 
         if crashAtivo then
-            if selectedPlayer then
+            -- Busca o alvo pelo nome selecionado (igual ao Fling Ball V2)
+            local target = game.Players:FindFirstChild(selectedPlayerName)
+
+            if target then
+                selectedPlayer = target
                 crashConnection = RunService.Stepped:Connect(function()
                     if selectedPlayer and selectedPlayer.Character then
                         TriggerCrashOn(selectedPlayer, 10)
                     end
                 end)
-                print("Crash ativo em: " .. selectedPlayer.Name)
+                print("[Annoy] Ativo em: " .. selectedPlayer.Name)
             else
-                print("Nenhum player selecionado para crash")
+                warn("[Annoy] Nenhum player selecionado!")
                 crashAtivo = false
             end
         else
-            print("Crash desativado")
+            print("[Annoy] Desativado")
         end
     end
 })
-
--- HUB NORMAL (RECEPTORA)
-
-local Players = game:GetService("Players")
-local TextChatService = game:GetService("TextChatService")
-
-local lp = Players.LocalPlayer
-
--- 🔐 whitelist (quem pode mandar comandos)
-local admins = {
-    ["luiskkj998"] = true,
-    ["tokitooff29"] = true
-}
-
--- pegar canal
-local channel = TextChatService.TextChannels:FindFirstChild("RBXGeneral")
-    or TextChatService.TextChannels:GetChildren()[1]
-
-local function getSender(msgData)
-    -- tenta obter nome do remetente (API nova)
-    if msgData.TextSource and msgData.TextSource.Name then
-        return msgData.TextSource.Name
-    end
-    return nil
-end
-
-local function onMessage(msgData)
-    local sender = getSender(msgData)
-    if not sender or not admins[sender] then return end -- bloqueia desconhecidos
-
-    local msg = string.lower(msgData.Text or "")
-    local me = string.lower(lp.Name)
-
-    -- /kill Nome
-    if msg:match("^/kill%s+" .. me) then
-        local hum = lp.Character and lp.Character:FindFirstChildOfClass("Humanoid")
-        if hum then hum.Health = 0 end
-    end
-
-    -- /freeze Nome
-    if msg:match("^/freeze%s+" .. me) then
-        local hrp = lp.Character and lp.Character:FindFirstChild("HumanoidRootPart")
-        if hrp then hrp.Anchored = true end
-    end
-
-    -- /unfreeze Nome
-    if msg:match("^/unfreeze%s+" .. me) then
-        local hrp = lp.Character and lp.Character:FindFirstChild("HumanoidRootPart")
-        if hrp then hrp.Anchored = false end
-    end
-
-    -- /speed Nome  (fixo em 100)
-    if msg:match("^/speed%s+" .. me) then
-        local hum = lp.Character and lp.Character:FindFirstChildOfClass("Humanoid")
-        if hum then hum.WalkSpeed = 100 end
-    end
-
-    -- /kick Nome (client-side)
-    if msg:match("^/kick%s+" .. me) then
-        lp:Kick("Removido via comando")
-    end
-end
-
-channel.MessageReceived:Connect(onMessage)
