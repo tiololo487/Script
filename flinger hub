@@ -807,8 +807,21 @@ Troll:AddToggle({
                 stopBallLoop()
                 stopBallLoop = nil
             end
+            if target then
+                BallFling(target)
+                print("[FlingBall] Ligada em: " .. target.Name)
+            else
+                warn("[FlingBall] Selecione um jogador!")
+            end
+        else
+            if stopBallLoop then
+                stopBallLoop()
+                stopBallLoop = nil
+                print("[FlingBall] Desligada")
+            end
+        end
+    end
 })
-
 
 Troll:AddToggle({
     Name = "Annoy VOLTOU 😎",
