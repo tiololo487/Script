@@ -653,7 +653,6 @@ Troll:AddToggle({
     end
 })
 
-
 local stopBallLoop = nil
 
 local function BallFling(target)
@@ -796,33 +795,21 @@ local function BallFling(target)
     end)
 end
 
--- Toggle Fling Ball V2
 Troll:AddToggle({
     Name = "Fling Ball V2",
     Default = false,
     Callback = function(state)
-        local target = game.Players:FindFirstChild(selectedPlayerName)
+        local target = game:GetService("Players")[selectedPlayerName])
+        end5
         if state then
             -- Limpa loop anterior se existir
             if stopBallLoop then
                 stopBallLoop()
                 stopBallLoop = nil
             end
-            if target then
-                BallFling(target)
-                print("[FlingBall] Ligada em: " .. target.Name)
-            else
-                warn("[FlingBall] Selecione um jogador!")
-            end
-        else
-            if stopBallLoop then
-                stopBallLoop()
-                stopBallLoop = nil
-                print("[FlingBall] Desligada")
-            end
-        end
-    end
 })
+
+
 
 Troll:AddToggle({
     Name = "Annoy VOLTOU 😎",
