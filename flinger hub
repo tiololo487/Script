@@ -795,11 +795,12 @@ local function BallFling(target)
     end)
 end
 
+-- Toggle Fling Ball V2
 Troll:AddToggle({
     Name = "Fling Ball V2",
     Default = false,
     Callback = function(state)
-        local target = game:GetService("Players")[selectedPlayerName])
+        local target = game:GetService("Players")[selectedPlayerName]
         if state then
             -- Limpa loop anterior se existir
             if stopBallLoop then
@@ -807,7 +808,6 @@ Troll:AddToggle({
                 stopBallLoop = nil
             end
 })
-
 
 
 Troll:AddToggle({
