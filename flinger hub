@@ -800,7 +800,6 @@ Troll:AddToggle({
     Default = false,
     Callback = function(state)
         local target = game:GetService("Players")[selectedPlayerName])
-        end
         if state then
             -- Limpa loop anterior se existir
             if stopBallLoop then
