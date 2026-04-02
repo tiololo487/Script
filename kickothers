@@ -5,117 +5,6 @@ local Debris = game:GetService("Debris")
 local LocalPlayer = Players.LocalPlayer
 local tool = script.Parent
 
--- Atualiza personagem corretamente
-local character, humanoid, hrp
-
-local function updateCharacter()
-	character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-	humanoid = character:WaitForChild("Humanoid")
-	hrp = character:WaitForChild("HumanoidRootPart")
-end
-
-updateCharacter()
-LocalPlayer.CharacterAdded:Connect(updateCharacter)
-
-------------------------------------------------------------------
--- GUI
-------------------------------------------------------------------
-
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "KickGui"
-screenGui.ResetOnSpawn = false
-screenGui.Parent = LocalPlayer.PlayerGui
-
-local kickBtn = Instance.new("TextButton")
-kickBtn.Size = UDim2.new(0, 110, 0, 36)
-kickBtn.Position = UDim2.new(1, -120, 0, 10)
-kickBtn.Text = "👟 Kick"
-kickBtn.BackgroundColor3 = Color3.fromRGB(20,20,20)
-kickBtn.TextColor3 = Color3.new(1,1,1)
-kickBtn.Parent = screenGui
-
-Instance.new("UICorner", kickBtn)
-
-------------------------------------------------------------------
--- WalkFling otimizado
-------------------------------------------------------------------
-
-local flingActive = false
-local connection
-
-local function startFling()
-	if flingActive then return end
-	flingActive = true
-
-	connection = RunService.Heartbeat:Connect(function()
-		for _, p in ipairs(Players:GetPlayers()) do
-			if p ~= LocalPlayer and p.Character then
-				local oHRP = p.Character:FindFirstChild("HumanoidRootPart")
-				local hum = p.Character:FindFirstChildOfClass("Humanoid")
-
-				if oHRP and hum and hum.Health > 0 then
-					if (hrp.Position - oHRP.Position).Magnitude < 8 then
-						local bv = Instance.new("BodyVelocity")
-						bv.Velocity = (oHRP.Position - hrp.Position).Unit * 10000
-						bv.MaxForce = Vector3.new(1e9,1e9,1e9)
-						bv.Parent = oHRP
-						Debris:AddItem(bv, 0.15)
-					end
-				end
-			end
-		end
-	end)
-end
-
-local function stopFling()
-	flingActive = false
-	if connection then
-		connection:Disconnect()
-		connection = nil
-	end
-end
-
-------------------------------------------------------------------
--- Ativação
-------------------------------------------------------------------
-
-local cooldown = false
-
-local function activate()
-	if cooldown then return end
-	cooldown = true
-
-	kickBtn.BackgroundColor3 = Color3.fromRGB(50,50,50)
-
-	local anim = Instance.new("Animation")
-	anim.AnimationId = "rbxassetid://127764273000599"
-
-	local track = humanoid:LoadAnimation(anim)
-	track:Play()
-
-	startFling()
-
-	track.Stopped:Connect(function()
-		stopFling()
-		cooldown = false
-		kickBtn.BackgroundColor3 = Color3.fromRGB(20,20,20)
-	end)
-end
-
-kickBtn.MouseButton1Click:Connect(activate)
-tool.Activated:Connect(activate)
-
-tool.Unequipped:Connect(function()
-	stopFling()
-	cooldown = false
-end)
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local Debris = game:GetService("Debris")
-
-local LocalPlayer = Players.LocalPlayer
-local tool = script.Parent
-
 local character, humanoid, hrp
 
 local function updateCharacter()
@@ -214,6 +103,97 @@ end
 
 punchBtn.MouseButton1Click:Connect(activate)
 tool.Activated:Connect(activate)
+
+tool.Unequipped:Connect(function()
+	stopFling()
+	cooldown = false
+end)local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Debris = game:GetService("Debris")
+
+local LocalPlayer = Players.LocalPlayer
+local tool = script.Parent
+
+local character, humanoid, hrp
+
+local function updateCharacter()
+	character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+	humanoid = character:WaitForChild("Humanoid")
+	hrp = character:WaitForChild("HumanoidRootPart")
+end
+
+updateCharacter()
+LocalPlayer.CharacterAdded:Connect(updateCharacter)
+
+------------------------------------------------------------------
+-- WalkFling
+------------------------------------------------------------------
+
+local flingActive = false
+local connection
+
+local function startFling()
+	if flingActive then return end
+	flingActive = true
+
+	connection = RunService.Heartbeat:Connect(function()
+		if not hrp then return end
+
+		for _, p in ipairs(Players:GetPlayers()) do
+			if p ~= LocalPlayer and p.Character then
+				local oHRP = p.Character:FindFirstChild("HumanoidRootPart")
+				local hum = p.Character:FindFirstChildOfClass("Humanoid")
+
+				if oHRP and hum and hum.Health > 0 then
+					if (hrp.Position - oHRP.Position).Magnitude < 8 then
+						local bv = Instance.new("BodyVelocity")
+						bv.Velocity = (oHRP.Position - hrp.Position).Unit * 10000
+						bv.MaxForce = Vector3.new(1e9,1e9,1e9)
+						bv.Parent = oHRP
+						Debris:AddItem(bv, 0.15)
+					end
+				end
+			end
+		end
+	end)
+end
+
+local function stopFling()
+	flingActive = false
+	if connection then
+		connection:Disconnect()
+		connection = nil
+	end
+end
+
+------------------------------------------------------------------
+-- Ativação
+------------------------------------------------------------------
+
+local cooldown = false
+
+tool.Activated:Connect(function()
+	if cooldown then return end
+	cooldown = true
+
+	local anim = Instance.new("Animation")
+	anim.AnimationId = "rbxassetid://127764273000599"
+
+	local track = humanoid:LoadAnimation(anim)
+	track:Play()
+
+	startFling()
+
+	track.Stopped:Connect(function()
+		stopFling()
+		cooldown = false
+	end)
+
+	task.delay(track.Length > 0 and track.Length or 2, function()
+		stopFling()
+		cooldown = false
+	end)
+end)
 
 tool.Unequipped:Connect(function()
 	stopFling()
