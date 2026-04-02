@@ -1,255 +1,221 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local LocalPlayer = Players.LocalPlayer
+local Debris = game:GetService("Debris")
 
-local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-local humanoid = character:WaitForChild("Humanoid")
-local hrp = character:WaitForChild("HumanoidRootPart")
+local LocalPlayer = Players.LocalPlayer
+local tool = script.Parent
+
+-- Atualiza personagem corretamente
+local character, humanoid, hrp
+
+local function updateCharacter()
+	character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+	humanoid = character:WaitForChild("Humanoid")
+	hrp = character:WaitForChild("HumanoidRootPart")
+end
+
+updateCharacter()
+LocalPlayer.CharacterAdded:Connect(updateCharacter)
 
 ------------------------------------------------------------------
--- GUI — botão no canto superior direito (posição 1)
+-- GUI
 ------------------------------------------------------------------
 
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "KickGui"
 screenGui.ResetOnSpawn = false
-screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 screenGui.Parent = LocalPlayer.PlayerGui
 
 local kickBtn = Instance.new("TextButton")
-kickBtn.Name = "KickButton"
 kickBtn.Size = UDim2.new(0, 110, 0, 36)
-kickBtn.Position = UDim2.new(1, -120, 0, 10)  -- canto superior direito, posição 1
-kickBtn.AnchorPoint = Vector2.new(0, 0)
-kickBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-kickBtn.BorderSizePixel = 0
+kickBtn.Position = UDim2.new(1, -120, 0, 10)
 kickBtn.Text = "👟 Kick"
-kickBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-kickBtn.TextSize = 15
-kickBtn.Font = Enum.Font.GothamBold
-kickBtn.AutoButtonColor = false
+kickBtn.BackgroundColor3 = Color3.fromRGB(20,20,20)
+kickBtn.TextColor3 = Color3.new(1,1,1)
 kickBtn.Parent = screenGui
 
-Instance.new("UICorner", kickBtn).CornerRadius = UDim.new(0, 8)
-
-local kickStroke = Instance.new("UIStroke", kickBtn)
-kickStroke.Color = Color3.fromRGB(80, 80, 80)
-kickStroke.Thickness = 1.2
+Instance.new("UICorner", kickBtn)
 
 ------------------------------------------------------------------
--- WalkFling
+-- WalkFling otimizado
 ------------------------------------------------------------------
 
-local walkFlingActive = false
-local walkFlingConnection = nil
+local flingActive = false
+local connection
 
-local function startWalkFling()
-    walkFlingActive = true
-    walkFlingConnection = RunService.Heartbeat:Connect(function()
-        if not walkFlingActive then return end
-        for _, otherPlayer in ipairs(Players:GetPlayers()) do
-            if otherPlayer ~= LocalPlayer and otherPlayer.Character then
-                local otherHRP = otherPlayer.Character:FindFirstChild("HumanoidRootPart")
-                local otherHum = otherPlayer.Character:FindFirstChildOfClass("Humanoid")
-                if otherHRP and otherHum and otherHum.Health > 0 then
-                    local dist = (hrp.Position - otherHRP.Position).Magnitude
-                    if dist <= 8 then
-                        for _, v in pairs(otherHRP:GetChildren()) do
-                            if v:IsA("BodyVelocity") then v:Destroy() end
-                        end
-                        local direction = (otherHRP.Position - hrp.Position).Unit
-                        local bv = Instance.new("BodyVelocity")
-                        bv.Velocity = (direction + Vector3.new(0, 0.5, 0)).Unit * 10000
-                        bv.MaxForce = Vector3.new(1e9, 1e9, 1e9)
-                        bv.P = 1e6
-                        bv.Parent = otherHRP
-                        game:GetService("Debris"):AddItem(bv, 0.15)
-                    end
-                end
-            end
-        end
-    end)
+local function startFling()
+	if flingActive then return end
+	flingActive = true
+
+	connection = RunService.Heartbeat:Connect(function()
+		for _, p in ipairs(Players:GetPlayers()) do
+			if p ~= LocalPlayer and p.Character then
+				local oHRP = p.Character:FindFirstChild("HumanoidRootPart")
+				local hum = p.Character:FindFirstChildOfClass("Humanoid")
+
+				if oHRP and hum and hum.Health > 0 then
+					if (hrp.Position - oHRP.Position).Magnitude < 8 then
+						local bv = Instance.new("BodyVelocity")
+						bv.Velocity = (oHRP.Position - hrp.Position).Unit * 10000
+						bv.MaxForce = Vector3.new(1e9,1e9,1e9)
+						bv.Parent = oHRP
+						Debris:AddItem(bv, 0.15)
+					end
+				end
+			end
+		end
+	end)
 end
 
-local function stopWalkFling()
-    walkFlingActive = false
-    if walkFlingConnection then
-        walkFlingConnection:Disconnect()
-        walkFlingConnection = nil
-    end
+local function stopFling()
+	flingActive = false
+	if connection then
+		connection:Disconnect()
+		connection = nil
+	end
 end
 
 ------------------------------------------------------------------
--- Lógica de ativação (compartilhada entre botão e tool)
+-- Ativação
 ------------------------------------------------------------------
 
-local animCooldown = false
+local cooldown = false
 
 local function activate()
-    if animCooldown then return end
-    animCooldown = true
+	if cooldown then return end
+	cooldown = true
 
-    kickBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+	kickBtn.BackgroundColor3 = Color3.fromRGB(50,50,50)
 
-    local anim = Instance.new("Animation")
-    anim.AnimationId = "rbxassetid://127764273000599"
+	local anim = Instance.new("Animation")
+	anim.AnimationId = "rbxassetid://127764273000599"
 
-    local track = humanoid:LoadAnimation(anim)
-    track:Play()
+	local track = humanoid:LoadAnimation(anim)
+	track:Play()
 
-    startWalkFling()
+	startFling()
 
-    local function onStop()
-        stopWalkFling()
-        animCooldown = false
-        kickBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-    end
-
-    track.Stopped:Connect(onStop)
-
-    local length = track.Length
-    task.delay(length > 0 and length or 2, function()
-        if walkFlingActive then onStop() end
-    end)
+	track.Stopped:Connect(function()
+		stopFling()
+		cooldown = false
+		kickBtn.BackgroundColor3 = Color3.fromRGB(20,20,20)
+	end)
 end
-
-------------------------------------------------------------------
--- Conecta botão e tool ao mesmo activate()
-------------------------------------------------------------------
 
 kickBtn.MouseButton1Click:Connect(activate)
 tool.Activated:Connect(activate)
 
 tool.Unequipped:Connect(function()
-    stopWalkFling()
-    animCooldown = false
-    kickBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+	stopFling()
+	cooldown = false
 end)
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local Debris = game:GetService("Debris")
+
 local LocalPlayer = Players.LocalPlayer
+local tool = script.Parent
 
-local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-local humanoid = character:WaitForChild("Humanoid")
-local hrp = character:WaitForChild("HumanoidRootPart")
+local character, humanoid, hrp
 
+local function updateCharacter()
+	character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+	humanoid = character:WaitForChild("Humanoid")
+	hrp = character:WaitForChild("HumanoidRootPart")
+end
+
+updateCharacter()
+LocalPlayer.CharacterAdded:Connect(updateCharacter)
 
 ------------------------------------------------------------------
--- GUI — botão no canto superior direito (posição 2, abaixo do Kick)
+-- GUI
 ------------------------------------------------------------------
 
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "PunchGui"
 screenGui.ResetOnSpawn = false
-screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 screenGui.Parent = LocalPlayer.PlayerGui
 
 local punchBtn = Instance.new("TextButton")
-punchBtn.Name = "PunchButton"
 punchBtn.Size = UDim2.new(0, 110, 0, 36)
-punchBtn.Position = UDim2.new(1, -120, 0, 56)  -- canto superior direito, posição 2 (10 + 36 + 10)
-punchBtn.AnchorPoint = Vector2.new(0, 0)
-punchBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-punchBtn.BorderSizePixel = 0
+punchBtn.Position = UDim2.new(1, -120, 0, 56)
 punchBtn.Text = "👊 Punch"
-punchBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-punchBtn.TextSize = 15
-punchBtn.Font = Enum.Font.GothamBold
-punchBtn.AutoButtonColor = false
+punchBtn.BackgroundColor3 = Color3.fromRGB(20,20,20)
+punchBtn.TextColor3 = Color3.new(1,1,1)
 punchBtn.Parent = screenGui
 
-Instance.new("UICorner", punchBtn).CornerRadius = UDim.new(0, 8)
-
-local punchStroke = Instance.new("UIStroke", punchBtn)
-punchStroke.Color = Color3.fromRGB(80, 80, 80)
-punchStroke.Thickness = 1.2
+Instance.new("UICorner", punchBtn)
 
 ------------------------------------------------------------------
 -- WalkFling
 ------------------------------------------------------------------
 
-local walkFlingActive = false
-local walkFlingConnection = nil
+local flingActive = false
+local connection
 
-local function startWalkFling()
-    walkFlingActive = true
-    walkFlingConnection = RunService.Heartbeat:Connect(function()
-        if not walkFlingActive then return end
-        for _, otherPlayer in ipairs(Players:GetPlayers()) do
-            if otherPlayer ~= LocalPlayer and otherPlayer.Character then
-                local otherHRP = otherPlayer.Character:FindFirstChild("HumanoidRootPart")
-                local otherHum = otherPlayer.Character:FindFirstChildOfClass("Humanoid")
-                if otherHRP and otherHum and otherHum.Health > 0 then
-                    local dist = (hrp.Position - otherHRP.Position).Magnitude
-                    if dist <= 8 then
-                        for _, v in pairs(otherHRP:GetChildren()) do
-                            if v:IsA("BodyVelocity") then v:Destroy() end
-                        end
-                        local direction = (otherHRP.Position - hrp.Position).Unit
-                        local bv = Instance.new("BodyVelocity")
-                        bv.Velocity = (direction + Vector3.new(0, 0.5, 0)).Unit * 10000
-                        bv.MaxForce = Vector3.new(1e9, 1e9, 1e9)
-                        bv.P = 1e6
-                        bv.Parent = otherHRP
-                        game:GetService("Debris"):AddItem(bv, 0.15)
-                    end
-                end
-            end
-        end
-    end)
+local function startFling()
+	if flingActive then return end
+	flingActive = true
+
+	connection = RunService.Heartbeat:Connect(function()
+		for _, p in ipairs(Players:GetPlayers()) do
+			if p ~= LocalPlayer and p.Character then
+				local oHRP = p.Character:FindFirstChild("HumanoidRootPart")
+				local hum = p.Character:FindFirstChildOfClass("Humanoid")
+
+				if oHRP and hum and hum.Health > 0 then
+					if (hrp.Position - oHRP.Position).Magnitude < 8 then
+						local bv = Instance.new("BodyVelocity")
+						bv.Velocity = (oHRP.Position - hrp.Position).Unit * 10000
+						bv.MaxForce = Vector3.new(1e9,1e9,1e9)
+						bv.Parent = oHRP
+						Debris:AddItem(bv, 0.15)
+					end
+				end
+			end
+		end
+	end)
 end
 
-local function stopWalkFling()
-    walkFlingActive = false
-    if walkFlingConnection then
-        walkFlingConnection:Disconnect()
-        walkFlingConnection = nil
-    end
+local function stopFling()
+	flingActive = false
+	if connection then
+		connection:Disconnect()
+		connection = nil
+	end
 end
 
 ------------------------------------------------------------------
--- Lógica de ativação (compartilhada entre botão e tool)
+-- Ativação
 ------------------------------------------------------------------
 
-local animCooldown = false
+local cooldown = false
 
 local function activate()
-    if animCooldown then return end
-    animCooldown = true
+	if cooldown then return end
+	cooldown = true
 
-    punchBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+	punchBtn.BackgroundColor3 = Color3.fromRGB(50,50,50)
 
-    local anim = Instance.new("Animation")
-    anim.AnimationId = "rbxassetid://93583603972818"
+	local anim = Instance.new("Animation")
+	anim.AnimationId = "rbxassetid://93583603972818"
 
-    local track = humanoid:LoadAnimation(anim)
-    track:Play()
+	local track = humanoid:LoadAnimation(anim)
+	track:Play()
 
-    startWalkFling()
+	startFling()
 
-    local function onStop()
-        stopWalkFling()
-        animCooldown = false
-        punchBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-    end
-
-    track.Stopped:Connect(onStop)
-
-    local length = track.Length
-    task.delay(length > 0 and length or 2, function()
-        if walkFlingActive then onStop() end
-    end)
+	track.Stopped:Connect(function()
+		stopFling()
+		cooldown = false
+		punchBtn.BackgroundColor3 = Color3.fromRGB(20,20,20)
+	end)
 end
-
-------------------------------------------------------------------
--- Conecta botão e tool ao mesmo activate()
-------------------------------------------------------------------
 
 punchBtn.MouseButton1Click:Connect(activate)
 tool.Activated:Connect(activate)
 
 tool.Unequipped:Connect(function()
-    stopWalkFling()
-    animCooldown = false
-    punchBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+	stopFling()
+	cooldown = false
 end)
