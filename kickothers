@@ -1,0 +1,204 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+
+-- Aguarda o personagem
+local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+local hrp = character:WaitForChild("HumanoidRootPart")
+
+------------------------------------------------------------------
+-- Cria a Tool
+------------------------------------------------------------------
+
+local tool = Instance.new("Tool")
+tool.Name = "Kick"
+tool.RequiresHandle = false
+tool.ToolTip = "você tem poder"
+tool.Parent = LocalPlayer.Backpack
+
+------------------------------------------------------------------
+-- WalkFling
+------------------------------------------------------------------
+
+local walkFlingActive = false
+local walkFlingConnection = nil
+
+local function startWalkFling()
+    walkFlingActive = true
+    walkFlingConnection = RunService.Heartbeat:Connect(function()
+        if not walkFlingActive then return end
+
+        -- Procura jogadores próximos e aplica fling
+        for _, otherPlayer in ipairs(Players:GetPlayers()) do
+            if otherPlayer ~= LocalPlayer and otherPlayer.Character then
+                local otherHRP = otherPlayer.Character:FindFirstChild("HumanoidRootPart")
+                local otherHum = otherPlayer.Character:FindFirstChildOfClass("Humanoid")
+                if otherHRP and otherHum and otherHum.Health > 0 then
+                    local dist = (hrp.Position - otherHRP.Position).Magnitude
+                    if dist <= 8 then
+                        -- Remove BV anterior
+                        for _, v in pairs(otherHRP:GetChildren()) do
+                            if v:IsA("BodyVelocity") then v:Destroy() end
+                        end
+
+                        local direction = (otherHRP.Position - hrp.Position).Unit
+                        local bv = Instance.new("BodyVelocity")
+                        bv.Velocity = (direction + Vector3.new(0, 0.5, 0)).Unit * 10000
+                        bv.MaxForce = Vector3.new(1e9, 1e9, 1e9)
+                        bv.P = 1e6
+                        bv.Parent = otherHRP
+                        game:GetService("Debris"):AddItem(bv, 0.15)
+                    end
+                end
+            end
+        end
+    end)
+end
+
+local function stopWalkFling()
+    walkFlingActive = false
+    if walkFlingConnection then
+        walkFlingConnection:Disconnect()
+        walkFlingConnection = nil
+    end
+end
+
+------------------------------------------------------------------
+-- Animação + lógica ao clicar
+------------------------------------------------------------------
+
+tool.Activated:Connect(function()
+    -- Carrega e toca a animação
+    local anim = Instance.new("Animation")
+    anim.AnimationId = "rbxassetid://127764273000599"
+
+    local track = humanoid:LoadAnimation(anim)
+    track:Play()
+
+    -- Ativa walkfling enquanto a animação toca
+    startWalkFling()
+
+    -- Para o walkfling quando a animação terminar
+    track.Stopped:Connect(function()
+        stopWalkFling()
+    end)
+
+    -- Fallback: para após o comprimento da animação (caso Stopped não dispare)
+    local length = track.Length
+    if length > 0 then
+        task.delay(length, function()
+            if walkFlingActive then
+                stopWalkFling()
+            end
+        end)
+    else
+        -- Se Length ainda for 0 (animação não carregou tempo), espera um pouco
+        task.delay(2, function()
+            if walkFlingActive then
+                stopWalkFling()
+            end
+        end)
+    end
+end)
+
+-- Garante que o walkfling para se desequipar a tool
+tool.Unequipped:Connect(function()
+    stopWalkFling()
+end)
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+
+-- Aguarda o personagem
+local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+local hrp = character:WaitForChild("HumanoidRootPart")
+
+------------------------------------------------------------------
+-- Cria a Tool
+------------------------------------------------------------------
+
+local tool = Instance.new("Tool")
+tool.Name = "punch"
+tool.RequiresHandle = false
+tool.ToolTip = "super punch"
+tool.Parent = LocalPlayer.Backpack
+
+------------------------------------------------------------------
+-- WalkFling
+------------------------------------------------------------------
+
+local walkFlingActive = false
+local walkFlingConnection = nil
+
+local function startWalkFling()
+    walkFlingActive = true
+    walkFlingConnection = RunService.Heartbeat:Connect(function()
+        if not walkFlingActive then return end
+
+        for _, otherPlayer in ipairs(Players:GetPlayers()) do
+            if otherPlayer ~= LocalPlayer and otherPlayer.Character then
+                local otherHRP = otherPlayer.Character:FindFirstChild("HumanoidRootPart")
+                local otherHum = otherPlayer.Character:FindFirstChildOfClass("Humanoid")
+                if otherHRP and otherHum and otherHum.Health > 0 then
+                    local dist = (hrp.Position - otherHRP.Position).Magnitude
+                    if dist <= 8 then
+                        for _, v in pairs(otherHRP:GetChildren()) do
+                            if v:IsA("BodyVelocity") then v:Destroy() end
+                        end
+
+                        local direction = (otherHRP.Position - hrp.Position).Unit
+                        local bv = Instance.new("BodyVelocity")
+                        bv.Velocity = (direction + Vector3.new(0, 0.5, 0)).Unit * 10000
+                        bv.MaxForce = Vector3.new(1e9, 1e9, 1e9)
+                        bv.P = 1e6
+                        bv.Parent = otherHRP
+                        game:GetService("Debris"):AddItem(bv, 0.15)
+                    end
+                end
+            end
+        end
+    end)
+end
+
+local function stopWalkFling()
+    walkFlingActive = false
+    if walkFlingConnection then
+        walkFlingConnection:Disconnect()
+        walkFlingConnection = nil
+    end
+end
+
+------------------------------------------------------------------
+-- Animação + lógica ao clicar
+------------------------------------------------------------------
+
+tool.Activated:Connect(function()
+    local anim = Instance.new("Animation")
+    anim.AnimationId = "rbxassetid://93583603972818"
+
+    local track = humanoid:LoadAnimation(anim)
+    track:Play()
+
+    startWalkFling()
+
+    track.Stopped:Connect(function()
+        stopWalkFling()
+    end)
+
+    local length = track.Length
+    if length > 0 then
+        task.delay(length, function()
+            if walkFlingActive then stopWalkFling() end
+        end)
+    else
+        task.delay(2, function()
+            if walkFlingActive then stopWalkFling() end
+        end)
+    end
+end)
+
+tool.Unequipped:Connect(function()
+    stopWalkFling()
+end)
