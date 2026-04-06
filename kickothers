@@ -1,88 +1,134 @@
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
 
--- Função para criar Tool
-local function createTool(name, animationId)
-	local tool = Instance.new("Tool")
-	tool.Name = name
-	tool.RequiresHandle = false
-	tool.Parent = player:WaitForChild("Backpack")
+-- Character
+local character, humanoid, hrp
 
-	local character = player.Character or player.CharacterAdded:Wait()
-	local humanoid = character:WaitForChild("Humanoid")
-	local hrp = character:WaitForChild("HumanoidRootPart")
+local function updateCharacter()
+	character = player.Character or player.CharacterAdded:Wait()
+	humanoid = character:WaitForChild("Humanoid")
+	hrp = character:WaitForChild("HumanoidRootPart")
+end
 
-	player.CharacterAdded:Connect(function(char)
-		character = char
-		humanoid = char:WaitForChild("Humanoid")
-		hrp = char:WaitForChild("HumanoidRootPart")
+updateCharacter()
+player.CharacterAdded:Connect(updateCharacter)
+
+-- GUI
+local gui = Instance.new("ScreenGui")
+gui.Parent = player:WaitForChild("PlayerGui")
+
+-- Função pra criar botão arrastável
+local function createButton(name, position)
+	local btn = Instance.new("TextButton")
+	btn.Size = UDim2.new(0, 140, 0, 50)
+	btn.Position = position
+	btn.Text = name
+	btn.BackgroundColor3 = Color3.fromRGB(30,30,30)
+	btn.TextColor3 = Color3.new(1,1,1)
+	btn.Parent = gui
+
+	-- Drag
+	local dragging = false
+	local dragStart, startPos
+
+	btn.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			dragging = true
+			dragStart = input.Position
+			startPos = btn.Position
+		end
 	end)
 
-	local flingConnection
-	local cooldown = false
+	btn.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			dragging = false
+		end
+	end)
 
-	local function startFling()
-		if flingConnection then return end
+	game:GetService("UserInputService").InputChanged:Connect(function(input)
+		if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+			local delta = input.Position - dragStart
+			btn.Position = UDim2.new(
+				startPos.X.Scale,
+				startPos.X.Offset + delta.X,
+				startPos.Y.Scale,
+				startPos.Y.Offset + delta.Y
+			)
+		end
+	end)
 
-		flingConnection = game:GetService("RunService").Heartbeat:Connect(function()
-			for _, p in pairs(Players:GetPlayers()) do
-				if p ~= player and p.Character then
-					local targetHRP = p.Character:FindFirstChild("HumanoidRootPart")
-					local hum = p.Character:FindFirstChildOfClass("Humanoid")
+	return btn
+end
 
-					if targetHRP and hum and hum.Health > 0 then
-						local dist = (hrp.Position - targetHRP.Position).Magnitude
-						if dist < 10 then
-							-- Força mais forte
-							local bv = Instance.new("BodyVelocity")
-							bv.Velocity = (targetHRP.Position - hrp.Position).Unit * 15000
-							bv.MaxForce = Vector3.new(1e9,1e9,1e9)
-							bv.Parent = targetHRP
+-- Fling
+local flingConnection
 
-							game:GetService("Debris"):AddItem(bv, 0.1)
-						end
+local function startFling()
+	if flingConnection then return end
+
+	flingConnection = RunService.Heartbeat:Connect(function()
+		for _, p in pairs(Players:GetPlayers()) do
+			if p ~= player and p.Character then
+				local targetHRP = p.Character:FindFirstChild("HumanoidRootPart")
+				local hum = p.Character:FindFirstChildOfClass("Humanoid")
+
+				if targetHRP and hum and hum.Health > 0 then
+					if (hrp.Position - targetHRP.Position).Magnitude < 10 then
+						local bv = Instance.new("BodyVelocity")
+						bv.Velocity = (targetHRP.Position - hrp.Position).Unit * 15000
+						bv.MaxForce = Vector3.new(1e9,1e9,1e9)
+						bv.Parent = targetHRP
+
+						game:GetService("Debris"):AddItem(bv, 0.1)
 					end
 				end
 			end
-		end)
-	end
-
-	local function stopFling()
-		if flingConnection then
-			flingConnection:Disconnect()
-			flingConnection = nil
 		end
-	end
-
-	tool.Activated:Connect(function()
-		if cooldown then return end
-		cooldown = true
-
-		local animator = humanoid:FindFirstChildOfClass("Animator")
-		if not animator then
-			animator = Instance.new("Animator", humanoid)
-		end
-
-		local anim = Instance.new("Animation")
-		anim.AnimationId = animationId
-
-		local track = animator:LoadAnimation(anim)
-		track:Play()
-
-		startFling()
-
-		track.Stopped:Wait()
-
-		stopFling()
-		cooldown = false
-	end)
-
-	tool.Unequipped:Connect(function()
-		stopFling()
-		cooldown = false
 	end)
 end
 
--- Criar Tools
-createTool("Kick Tool", "rbxassetid://127764273000599")
-createTool("Punch Tool", "rbxassetid://93583603972818")
+local function stopFling()
+	if flingConnection then
+		flingConnection:Disconnect()
+		flingConnection = nil
+	end
+end
+
+-- Função de ataque
+local cooldown = false
+
+local function attack(animationId)
+	if cooldown then return end
+	cooldown = true
+
+	local animator = humanoid:FindFirstChildOfClass("Animator")
+	if not animator then
+		animator = Instance.new("Animator", humanoid)
+	end
+
+	local anim = Instance.new("Animation")
+	anim.AnimationId = animationId
+
+	local track = animator:LoadAnimation(anim)
+	track:Play()
+
+	startFling()
+
+	track.Stopped:Wait()
+
+	stopFling()
+	cooldown = false
+end
+
+-- Criar botões
+local kickBtn = createButton("KICK", UDim2.new(0.1, 0, 0.7, 0))
+local punchBtn = createButton("PUNCH", UDim2.new(0.3, 0, 0.7, 0))
+
+kickBtn.MouseButton1Click:Connect(function()
+	attack("rbxassetid://127764273000599")
+end)
+
+punchBtn.MouseButton1Click:Connect(function()
+	attack("rbxassetid://93583603972818")
+end)
