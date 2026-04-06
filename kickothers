@@ -1,181 +1,88 @@
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 
-local tool = Instance.new("Tool")
-tool.Name = "Kick Tool"
-tool.RequiresHandle = false
-tool.Parent = player.Backpack
+-- Função para criar Tool
+local function createTool(name, animationId)
+	local tool = Instance.new("Tool")
+	tool.Name = name
+	tool.RequiresHandle = false
+	tool.Parent = player:WaitForChild("Backpack")
 
-local scriptTool = Instance.new("LocalScript")
-scriptTool.Parent = tool
+	local character = player.Character or player.CharacterAdded:Wait()
+	local humanoid = character:WaitForChild("Humanoid")
+	local hrp = character:WaitForChild("HumanoidRootPart")
 
-scriptTool.Source = [[
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local Debris = game:GetService("Debris")
+	player.CharacterAdded:Connect(function(char)
+		character = char
+		humanoid = char:WaitForChild("Humanoid")
+		hrp = char:WaitForChild("HumanoidRootPart")
+	end)
 
-local LocalPlayer = Players.LocalPlayer
-local tool = script.Parent
+	local flingConnection
+	local cooldown = false
 
-local character, humanoid, hrp
+	local function startFling()
+		if flingConnection then return end
 
-local function updateCharacter()
-	character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-	humanoid = character:WaitForChild("Humanoid")
-	hrp = character:WaitForChild("HumanoidRootPart")
-end
+		flingConnection = game:GetService("RunService").Heartbeat:Connect(function()
+			for _, p in pairs(Players:GetPlayers()) do
+				if p ~= player and p.Character then
+					local targetHRP = p.Character:FindFirstChild("HumanoidRootPart")
+					local hum = p.Character:FindFirstChildOfClass("Humanoid")
 
-updateCharacter()
-LocalPlayer.CharacterAdded:Connect(updateCharacter)
+					if targetHRP and hum and hum.Health > 0 then
+						local dist = (hrp.Position - targetHRP.Position).Magnitude
+						if dist < 10 then
+							-- Força mais forte
+							local bv = Instance.new("BodyVelocity")
+							bv.Velocity = (targetHRP.Position - hrp.Position).Unit * 15000
+							bv.MaxForce = Vector3.new(1e9,1e9,1e9)
+							bv.Parent = targetHRP
 
-local flingActive = false
-local connection
-
-local function startFling()
-	if flingActive then return end
-	flingActive = true
-
-	connection = RunService.Heartbeat:Connect(function()
-		for _, p in ipairs(Players:GetPlayers()) do
-			if p ~= LocalPlayer and p.Character then
-				local oHRP = p.Character:FindFirstChild("HumanoidRootPart")
-				local hum = p.Character:FindFirstChildOfClass("Humanoid")
-
-				if oHRP and hum and hum.Health > 0 then
-					if (hrp.Position - oHRP.Position).Magnitude < 8 then
-						local bv = Instance.new("BodyVelocity")
-						bv.Velocity = (oHRP.Position - hrp.Position).Unit * 10000
-						bv.MaxForce = Vector3.new(1e9,1e9,1e9)
-						bv.Parent = oHRP
-						Debris:AddItem(bv, 0.15)
+							game:GetService("Debris"):AddItem(bv, 0.1)
+						end
 					end
 				end
 			end
-		end
-	end)
-end
-
-local function stopFling()
-	flingActive = false
-	if connection then
-		connection:Disconnect()
-		connection = nil
+		end)
 	end
-end
 
-local cooldown = false
+	local function stopFling()
+		if flingConnection then
+			flingConnection:Disconnect()
+			flingConnection = nil
+		end
+	end
 
-tool.Activated:Connect(function()
-	if cooldown then return end
-	cooldown = true
+	tool.Activated:Connect(function()
+		if cooldown then return end
+		cooldown = true
 
-	local anim = Instance.new("Animation")
-	anim.AnimationId = "rbxassetid://127764273000599"
+		local animator = humanoid:FindFirstChildOfClass("Animator")
+		if not animator then
+			animator = Instance.new("Animator", humanoid)
+		end
 
-	local track = humanoid:LoadAnimation(anim)
-	track:Play()
+		local anim = Instance.new("Animation")
+		anim.AnimationId = animationId
 
-	startFling()
+		local track = animator:LoadAnimation(anim)
+		track:Play()
 
-	track.Stopped:Connect(function()
+		startFling()
+
+		track.Stopped:Wait()
+
 		stopFling()
 		cooldown = false
 	end)
-end)
 
-tool.Unequipped:Connect(function()
-	stopFling()
-	cooldown = false
-end)
-]]
-
-local Players = game:GetService("Players")
-local player = Players.LocalPlayer
-
-local tool = Instance.new("Tool")
-tool.Name = "Punch Tool"
-tool.RequiresHandle = false
-tool.Parent = player.Backpack
-
-local scriptTool = Instance.new("LocalScript")
-scriptTool.Parent = tool
-
-scriptTool.Source = [[
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local Debris = game:GetService("Debris")
-
-local LocalPlayer = Players.LocalPlayer
-local tool = script.Parent
-
-local character, humanoid, hrp
-
-local function updateCharacter()
-	character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-	humanoid = character:WaitForChild("Humanoid")
-	hrp = character:WaitForChild("HumanoidRootPart")
-end
-
-updateCharacter()
-LocalPlayer.CharacterAdded:Connect(updateCharacter)
-
-local flingActive = false
-local connection
-
-local function startFling()
-	if flingActive then return end
-	flingActive = true
-
-	connection = RunService.Heartbeat:Connect(function()
-		for _, p in ipairs(Players:GetPlayers()) do
-			if p ~= LocalPlayer and p.Character then
-				local oHRP = p.Character:FindFirstChild("HumanoidRootPart")
-				local hum = p.Character:FindFirstChildOfClass("Humanoid")
-
-				if oHRP and hum and hum.Health > 0 then
-					if (hrp.Position - oHRP.Position).Magnitude < 8 then
-						local bv = Instance.new("BodyVelocity")
-						bv.Velocity = (oHRP.Position - hrp.Position).Unit * 10000
-						bv.MaxForce = Vector3.new(1e9,1e9,1e9)
-						bv.Parent = oHRP
-						Debris:AddItem(bv, 0.15)
-					end
-				end
-			end
-		end
-	end)
-end
-
-local function stopFling()
-	flingActive = false
-	if connection then
-		connection:Disconnect()
-		connection = nil
-	end
-end
-
-local cooldown = false
-
-tool.Activated:Connect(function()
-	if cooldown then return end
-	cooldown = true
-
-	local anim = Instance.new("Animation")
-	anim.AnimationId = "rbxassetid://93583603972818"
-
-	local track = humanoid:LoadAnimation(anim)
-	track:Play()
-
-	startFling()
-
-	track.Stopped:Connect(function()
+	tool.Unequipped:Connect(function()
 		stopFling()
 		cooldown = false
 	end)
-end)
+end
 
-tool.Unequipped:Connect(function()
-	stopFling()
-	cooldown = false
-end)
-]]
+-- Criar Tools
+createTool("Kick Tool", "rbxassetid://127764273000599")
+createTool("Punch Tool", "rbxassetid://93583603972818")
