@@ -421,7 +421,7 @@ Troll:AddToggle({
 
 local stopOrbit = nil
 
-local function OrbitBallGod()
+local function OrbitBallClean()
 
     local Players = game:GetService("Players")
     local RS = game:GetService("ReplicatedStorage")
@@ -434,7 +434,7 @@ local function OrbitBallGod()
 
     local ServerBalls = workspace.WorkspaceCom:WaitForChild("001_SoccerBalls")
 
-    -- 🔁 PEGAR BOLA SEMPRE QUE SUMIR
+    -- 🔁 pegar bola
     local function GetBall()
         local name = "Soccer"..player.Name
         local ball = ServerBalls:FindFirstChild(name)
@@ -453,49 +453,63 @@ local function OrbitBallGod()
     local Ball = GetBall()
     if not Ball then return end
 
-    -- ⚙️ CONFIG EXTREMA
+    -- ⚙️ física balanceada
     Ball.CanCollide = true
     Ball.Massless = false
-    Ball.CustomPhysicalProperties = PhysicalProperties.new(0.000001, 0, 0)
+    Ball.CustomPhysicalProperties = PhysicalProperties.new(0.0001, 0, 0)
 
-    -- LIMPAR FORÇAS ANTIGAS
+    -- limpar forças
     for _,v in ipairs(Ball:GetChildren()) do
-        if v:IsA("BodyMover") or v:IsA("AlignPosition") then
+        if v:IsA("BodyMover") then
             v:Destroy()
         end
     end
 
-    -- 🧲 POSIÇÃO ULTRA ESTÁVEL
-    local align = Instance.new("AlignPosition")
-    align.MaxForce = math.huge
-    align.Responsiveness = 200
-    align.RigidityEnabled = true
-    align.Parent = Ball
+    -- 🧲 posição estável
+    local bp = Instance.new("BodyPosition")
+    bp.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+    bp.P = 50000
+    bp.D = 500
+    bp.Parent = Ball
 
-    local att0 = Instance.new("Attachment", Ball)
-    local att1 = Instance.new("Attachment", hrp)
-
-    align.Attachment0 = att0
-    align.Attachment1 = att1
-
-    -- ⚡ VELOCIDADE (FLING BASE)
+    -- ⚡ força de impacto (fica zerada até bater)
     local bv = Instance.new("BodyVelocity")
     bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
     bv.Velocity = Vector3.zero
     bv.Parent = Ball
 
-    -- 🌪️ GIRO INSANO
+    -- 🌪️ rotação (ajuda no fling)
     local bav = Instance.new("BodyAngularVelocity")
     bav.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
-    bav.AngularVelocity = Vector3.new(999999,999999,999999)
+    bav.AngularVelocity = Vector3.new(3000,3000,3000)
     bav.Parent = Ball
 
+    -- 💥 DETECTOR DE TOQUE
+    Ball.Touched:Connect(function(hit)
+        local char = hit.Parent
+        if char and char ~= character and char:FindFirstChild("HumanoidRootPart") then
+            -- impulso absurdo no contato
+            local dir = (hit.Position - Ball.Position).Unit
+            bv.Velocity = dir * 2500 + Vector3.new(0,1500,0)
+
+            -- reset rápido pra não ficar bugado
+            task.delay(0.15, function()
+                if bv then
+                    bv.Velocity = Vector3.zero
+                end
+            end)
+        end
+    end)
+
+    -- 🌀 órbita limpa
     local running = true
     local t = 0
+    local radius = 6
+    local speed = 2 -- velocidade CONTROLADA
 
     stopOrbit = function()
         running = false
-        if align then align:Destroy() end
+        if bp then bp:Destroy() end
         if bv then bv:Destroy() end
         if bav then bav:Destroy() end
     end
@@ -508,52 +522,24 @@ local function OrbitBallGod()
             return
         end
 
-        -- 🔁 RECAPTURA AUTOMÁTICA
-        if not Ball or not Ball.Parent then
-            Ball = GetBall()
-            return
-        end
+        t += dt * speed
 
-        t += dt * 20
+        local x = math.cos(t) * radius
+        local z = math.sin(t) * radius
+        local y = 1.5 + math.sin(t*2)
 
-        -- 🌀 ÓRBITA CAÓTICA DINÂMICA
-        local radius = 5 + math.sin(t*2)*3
-        local speed = 10 + math.cos(t*3)*10
-
-        local x = math.sin(t * speed) * radius
-        local y = math.cos(t * speed * 1.5) * 3
-        local z = math.cos(t * speed) * radius
-
-        local targetPos = hrp.Position + Vector3.new(x,y,z)
-
-        -- ⚡ TELEPORTE MICRO (FORÇA IMPACTO)
-        Ball.CFrame = CFrame.new(targetPos)
-
-        -- 💥 IMPULSO DIRECIONAL FORTE
-        local dir = (targetPos - Ball.Position)
-        if dir.Magnitude > 0 then
-            bv.Velocity = dir.Unit * (800 + math.random(200,600))
-        end
-
-        -- 💣 BURST ALEATÓRIO (AUMENTA FLING REAL)
-        if math.random(1,5) == 1 then
-            bv.Velocity = Vector3.new(
-                math.random(-2000,2000),
-                math.random(500,2500),
-                math.random(-2000,2000)
-            )
-        end
+        bp.Position = hrp.Position + Vector3.new(x,y,z)
     end)
 end
 
 -- 🔘 TOGGLE
 Troll:AddToggle({
-    Name = "Orbit Ball GOD",
+    Name = "Orbit Ball Clean Fling",
     Default = false,
     Callback = function(state)
         if state then
             if stopOrbit then stopOrbit() end
-            OrbitBallGod()
+            OrbitBallClean()
         else
             if stopOrbit then
                 stopOrbit()
