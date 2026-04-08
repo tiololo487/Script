@@ -676,37 +676,6 @@ local function FlingBall(target)
         task.wait(0.1)
     end
 end
-
--- atualizar lista de players
-local function getPlayerList()
-    local list = {}
-    for _, p in ipairs(Players:GetPlayers()) do
-        if p ~= player then
-            table.insert(list, p.Name)
-        end
-    end
-    return list
-end
-
--- dropdown
-local PlayerDropdown = Troll:AddDropdown({
-    Name = "Selecionar Player",
-    Options = getPlayerList(),
-    CurrentOption = {},
-    Callback = function(option)
-        selectedPlayerName = option[1]
-    end
-})
-
--- auto refresh
-Players.PlayerAdded:Connect(function()
-    PlayerDropdown:Refresh(getPlayerList())
-end)
-
-Players.PlayerRemoving:Connect(function()
-    PlayerDropdown:Refresh(getPlayerList())
-end)
-
 -- toggle
 Troll:AddToggle({
     Name = "Fling Ball (OP)",
