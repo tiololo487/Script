@@ -301,241 +301,7 @@ Troll:AddToggle({
     end
 })
 
-local stopBallLoop = nil
 
-local function BallVerticalLoop(target)
-    local Players = game:GetService("Players")
-    local ReplicatedStorage = game:GetService("ReplicatedStorage")
-    local player = Players.LocalPlayer
-    local character = player.Character or player.CharacterAdded:Wait()
-    local backpack = player:WaitForChild("Backpack")
-    local WorkspaceCom = workspace:WaitForChild("WorkspaceCom")
-    local ServerBalls = WorkspaceCom:WaitForChild("001_SoccerBalls")
-
-    -- Função para pegar a bola
-    local function GetBall()
-        local ballName = "Soccer" .. player.Name
-        local Ball = ServerBalls:FindFirstChild(ballName)
-        if not Ball then
-            local tool = ReplicatedStorage:FindFirstChild("RE") and ReplicatedStorage.RE:FindFirstChild("1Too1l")
-            if tool then
-                tool:InvokeServer("PickingTools", "SoccerBall")
-                repeat task.wait() until backpack:FindFirstChild("SoccerBall")
-                backpack.SoccerBall.Parent = character
-                repeat task.wait() until ServerBalls:FindFirstChild(ballName)
-                Ball = ServerBalls:FindFirstChild(ballName)
-            end
-        end
-        return Ball
-    end
-
-    local Ball = GetBall()
-    if not Ball then return end
-
-    Ball.CanCollide = false
-    Ball.Massless = true
-    Ball.CustomPhysicalProperties = PhysicalProperties.new(0.0001,0,0)
-
-    -- Checa alvo válido
-    if not target or target == player then return end
-    local tchar = target.Character
-    if not tchar then return end
-    local torso = tchar:FindFirstChild("UpperTorso") or tchar:FindFirstChild("Torso")
-    if not torso then return end
-
-    -- Limpar objetos físicos antigos
-    for _, v in pairs(Ball:GetChildren()) do
-        if v:IsA("BodyPosition") or v:IsA("BodyVelocity") or v:IsA("BodyGyro") then
-            v:Destroy()
-        end
-    end
-
-    -- Cria BodyPosition para manter a bola no torso
-    local bp = Instance.new("BodyPosition")
-    bp.MaxForce = Vector3.new(99e6,99e6,99e6)
-    bp.P = 9999e9999
-    bp.D = 100
-    bp.Position = torso.Position
-    bp.Parent = Ball
-
-    local running = true
-    local direction = 1
-    local heightRange = 1 -- altura máxima de cima para baixo
-
-    stopBallLoop = function()
-        running = false
-        if bp then bp:Destroy() end
-    end
-
-    -- Loop contínuo vertical
-    local RunService = game:GetService("RunService")
-    local connection
-    connection = RunService.Heartbeat:Connect(function()
-        if not running or not torso.Parent or not tchar:FindFirstChild("Humanoid") or tchar.Humanoid.Health <= 0 then
-            connection:Disconnect()
-            stopBallLoop()
-            return
-        end
-
-        -- Reposiciona imediatamente se cair no chão
-        if Ball.Position.Y < torso.Position.Y - heightRange then
-            bp.Position = torso.Position + Vector3.new(0, heightRange/2, 0)
-        else
-            -- Movimento vertical contínuo
-            direction = direction * -1
-            local offset = Vector3.new(0, (heightRange/2) * direction, 0)
-            bp.Position = torso.Position + offset
-        end
-    end)
-end
-
-
-
-local stopOrbit = nil
-
-local function OrbitBallCrazy()
-
-    local Players = game:GetService("Players")
-    local ReplicatedStorage = game:GetService("ReplicatedStorage")
-    local RunService = game:GetService("RunService")
-
-    local player = Players.LocalPlayer
-    local character = player.Character or player.CharacterAdded:Wait()
-    local hrp = character:WaitForChild("HumanoidRootPart")
-    local backpack = player:WaitForChild("Backpack")
-
-    local WorkspaceCom = workspace:WaitForChild("WorkspaceCom")
-    local ServerBalls = WorkspaceCom:WaitForChild("001_SoccerBalls")
-
-    -- PEGAR BOLA
-    local function GetBall()
-        local ballName = "Soccer" .. player.Name
-        local Ball = ServerBalls:FindFirstChild(ballName)
-
-        if not Ball then
-            local tool = ReplicatedStorage:FindFirstChild("RE") 
-                and ReplicatedStorage.RE:FindFirstChild("1Too1l")
-
-            if tool then
-                tool:InvokeServer("PickingTools", "SoccerBall")
-                repeat task.wait() until backpack:FindFirstChild("SoccerBall")
-                backpack.SoccerBall.Parent = character
-                repeat task.wait() until ServerBalls:FindFirstChild(ballName)
-                Ball = ServerBalls:FindFirstChild(ballName)
-            end
-        end
-
-        return Ball
-    end
-
-    local Ball = GetBall()
-    if not Ball then return end
-
-    Ball.CanCollide = true
-    Ball.Massless = false
-    Ball.CustomPhysicalProperties = PhysicalProperties.new(0.01, 0, 0)
-
-    -- LIMPAR
-    for _, v in pairs(Ball:GetChildren()) do
-        if v:IsA("BodyPosition") 
-        or v:IsA("BodyVelocity") 
-        or v:IsA("BodyAngularVelocity") then
-            v:Destroy()
-        end
-    end
-
-    -- POSIÇÃO
-    local bp = Instance.new("BodyPosition")
-    bp.MaxForce = Vector3.new(9e9,9e9,9e9)
-    bp.P = 1e6
-    bp.D = 100
-    bp.Parent = Ball
-
-    -- VELOCIDADE (FLING)
-    local bv = Instance.new("BodyVelocity")
-    bv.MaxForce = Vector3.new(9e9,9e9,9e9)
-    bv.Velocity = Vector3.new(0,0,0)
-    bv.Parent = Ball
-
-    -- GIRO
-    local bav = Instance.new("BodyAngularVelocity")
-    bav.MaxTorque = Vector3.new(9e9,9e9,9e9)
-    bav.AngularVelocity = Vector3.new(5000,5000,5000)
-    bav.Parent = Ball
-
-    local running = true
-    local radius = 6
-    local t = 0
-
-    stopOrbit = function()
-        running = false
-        if bp then bp:Destroy() end
-        if bv then bv:Destroy() end
-        if bav then bav:Destroy() end
-    end
-
-    local connection
-    connection = RunService.Heartbeat:Connect(function(dt)
-        if not running or not hrp.Parent then
-            connection:Disconnect()
-            stopOrbit()
-            return
-        end
-
-        t += dt * 10
-
-        local x = math.sin(t * 3) * radius
-        local y = math.cos(t * 5) * 2
-        local z = math.cos(t * 3) * radius
-
-        local pos = hrp.Position + Vector3.new(x, y, z)
-        bp.Position = pos
-
-        -- FLING DIRECIONAL
-        local direction = (pos - Ball.Position).Unit
-        bv.Velocity = direction * 600 -- pode aumentar pra 1000 se quiser absurdo
-    end)
-end
-
-
--- 🔘 TOGGLE ÚNICO
-Troll:AddToggle({
-    Name = "fling ball front",
-    Default = false,
-    Callback = function(state)
-        if state then
-            if stopOrbit then
-                stopOrbit()
-            end
-            OrbitBallCrazy()
-            print("Orbit Ball Crazy Ligado")
-        else
-            if stopOrbit then
-                stopOrbit()
-                stopOrbit = nil
-                print("Orbit Ball Crazy Desligado")
-            end
-        end
-    end
-})
-
--- Toggle Bola Orbit Louca
-Troll:AddToggle({
-    Name = "Orbit Ball V2",
-    Default = false,
-    Callback = function(state)
-        if state then
-            OrbitBallCrazy()
-            print("Bola Orbit Louca Ligada")
-        else
-            if stopOrbit then
-                stopOrbit()
-                stopOrbit = nil
-                print("Bola Orbit Louca Desligada")
-            end
-        end
-    end
-})
 
 local stopOrbitSelf = nil
 
@@ -653,233 +419,149 @@ Troll:AddToggle({
     end
 })
 
-local stopBallLoop = nil
+local stopOrbit = nil
 
-local function BallFling(target)
+local function OrbitBallGod()
+
     local Players = game:GetService("Players")
-    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+    local RS = game:GetService("ReplicatedStorage")
     local RunService = game:GetService("RunService")
+
     local player = Players.LocalPlayer
     local character = player.Character or player.CharacterAdded:Wait()
+    local hrp = character:WaitForChild("HumanoidRootPart")
     local backpack = player:WaitForChild("Backpack")
-    local WorkspaceCom = workspace:WaitForChild("WorkspaceCom")
-    local ServerBalls = WorkspaceCom:WaitForChild("001_SoccerBalls")
 
-    -- Função para pegar a bola
+    local ServerBalls = workspace.WorkspaceCom:WaitForChild("001_SoccerBalls")
+
+    -- 🔁 PEGAR BOLA SEMPRE QUE SUMIR
     local function GetBall()
-        local ballName = "Soccer" .. player.Name
-        local Ball = ServerBalls:FindFirstChild(ballName)
-        if not Ball then
-            local re = ReplicatedStorage:FindFirstChild("RE")
-            local tool = re and re:FindFirstChild("1Too1l")
-            if tool then
-                tool:InvokeServer("PickingTools", "SoccerBall")
-                local timeout = tick() + 5
-                repeat task.wait() until backpack:FindFirstChild("SoccerBall") or tick() > timeout
-                local sb = backpack:FindFirstChild("SoccerBall")
-                if sb then sb.Parent = character end
-                timeout = tick() + 5
-                repeat task.wait() until ServerBalls:FindFirstChild(ballName) or tick() > timeout
-                Ball = ServerBalls:FindFirstChild(ballName)
-            end
+        local name = "Soccer"..player.Name
+        local ball = ServerBalls:FindFirstChild(name)
+
+        if not ball then
+            RS.RE:FindFirstChild("1Too1l"):InvokeServer("PickingTools", "SoccerBall")
+            repeat task.wait() until backpack:FindFirstChild("SoccerBall")
+            backpack.SoccerBall.Parent = character
+            repeat task.wait() until ServerBalls:FindFirstChild(name)
+            ball = ServerBalls:FindFirstChild(name)
         end
-        return Ball
+
+        return ball
     end
 
     local Ball = GetBall()
-    if not Ball then warn("[FlingBall] Bola não encontrada!") return end
+    if not Ball then return end
 
-    -- Checa alvo válido
-    if not target or target == player then return end
-    local tchar = target.Character
-    if not tchar then return end
-    local torso = tchar:FindFirstChild("UpperTorso") or tchar:FindFirstChild("Torso")
-    local hum = tchar:FindFirstChildOfClass("Humanoid")
-    if not torso or not hum then return end
+    -- ⚙️ CONFIG EXTREMA
+    Ball.CanCollide = true
+    Ball.Massless = false
+    Ball.CustomPhysicalProperties = PhysicalProperties.new(0.000001, 0, 0)
 
-    Ball.CanCollide = false
-    Ball.Massless = true
-    Ball.CustomPhysicalProperties = PhysicalProperties.new(0.0001, 0, 0)
-
-    -- Limpar objetos físicos antigos
-    for _, v in pairs(Ball:GetChildren()) do
-        if v:IsA("BodyPosition") or v:IsA("BodyVelocity") or
-           v:IsA("BodyGyro") or v:IsA("BodyAngularVelocity") then
+    -- LIMPAR FORÇAS ANTIGAS
+    for _,v in ipairs(Ball:GetChildren()) do
+        if v:IsA("BodyMover") or v:IsA("AlignPosition") then
             v:Destroy()
         end
     end
 
-    -- Configurações do fling
-    local SWING_SPEED   = 40    -- Velocidade do balanço esquerda/direita (maior = mais rápido)
-    local SWING_WIDTH   = 3.5   -- Largura do balanço em studs
-    local SWING_DEPTH   = 0.5   -- Profundidade (frente/trás, pequena para ficar no torso)
-    local FLING_FORCE   = 5000  -- Força do fling ao detectar colisão
-    local TOUCH_RADIUS  = 2.8   -- Raio de detecção de colisão com o alvo
+    -- 🧲 POSIÇÃO ULTRA ESTÁVEL
+    local align = Instance.new("AlignPosition")
+    align.MaxForce = math.huge
+    align.Responsiveness = 200
+    align.RigidityEnabled = true
+    align.Parent = Ball
 
-    -- BodyPosition — começa já dentro do torso
-    local bp = Instance.new("BodyPosition")
-    bp.MaxForce = Vector3.new(1e6, 1e6, 1e6)
-    bp.P = 1e5   -- P alto para a bola ir rápido ao destino
-    bp.D = 50    -- D baixo para menos amortecimento (mais agressivo)
-    bp.Position = torso.Position
-    bp.Parent = Ball
+    local att0 = Instance.new("Attachment", Ball)
+    local att1 = Instance.new("Attachment", hrp)
+
+    align.Attachment0 = att0
+    align.Attachment1 = att1
+
+    -- ⚡ VELOCIDADE (FLING BASE)
+    local bv = Instance.new("BodyVelocity")
+    bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+    bv.Velocity = Vector3.zero
+    bv.Parent = Ball
+
+    -- 🌪️ GIRO INSANO
+    local bav = Instance.new("BodyAngularVelocity")
+    bav.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+    bav.AngularVelocity = Vector3.new(999999,999999,999999)
+    bav.Parent = Ball
 
     local running = true
     local t = 0
-    local flung = false  -- evita aplicar fling múltiplas vezes seguidas
 
-    stopBallLoop = function()
+    stopOrbit = function()
         running = false
-        pcall(function() bp:Destroy() end)
-    end
-
-    -- Função de fling: aplica velocidade explosiva lateral + vertical no alvo
-    local function ApplyFling(targetHRP)
-        for _, v in pairs(targetHRP:GetChildren()) do
-            if v:IsA("BodyVelocity") then v:Destroy() end
-        end
-
-        -- Direção lateral aleatória pra variar o fling
-        local randX = (math.random(0, 1) == 0) and 1 or -1
-        local randZ = (math.random(0, 1) == 0) and 0.5 or -0.5
-
-        local bv = Instance.new("BodyVelocity")
-        bv.Velocity = Vector3.new(randX * FLING_FORCE, FLING_FORCE * 0.8, randZ * FLING_FORCE)
-        bv.MaxForce = Vector3.new(1e9, 1e9, 1e9)
-        bv.P = 1e6
-        bv.Parent = targetHRP
-        game:GetService("Debris"):AddItem(bv, 0.12)
+        if align then align:Destroy() end
+        if bv then bv:Destroy() end
+        if bav then bav:Destroy() end
     end
 
     local connection
     connection = RunService.Heartbeat:Connect(function(dt)
-        -- Checa validade dos objetos
-        if not running
-           or not Ball or not Ball.Parent
-           or not torso or not torso.Parent
-           or not hum or hum.Health <= 0 then
+        if not running or not hrp.Parent then
             connection:Disconnect()
-            if running then stopBallLoop() end
+            stopOrbit()
             return
         end
 
-        -- Balanço horizontal esquerda/direita dentro do torso
-        -- Velocidade muito alta = bola rasga o torso de lado a lado
-        t = t + dt * SWING_SPEED
+        -- 🔁 RECAPTURA AUTOMÁTICA
+        if not Ball or not Ball.Parent then
+            Ball = GetBall()
+            return
+        end
 
-        local right = torso.CFrame.RightVector
-        local up    = torso.CFrame.UpVector
-        local look  = torso.CFrame.LookVector
+        t += dt * 20
 
-        local offsetSide  = right  * (math.sin(t) * SWING_WIDTH)
-        local offsetDepth = look   * (math.sin(t * 0.7) * SWING_DEPTH)
-        local offsetVert  = up     * (math.cos(t * 1.5) * 0.8) -- leve vibração vertical
+        -- 🌀 ÓRBITA CAÓTICA DINÂMICA
+        local radius = 5 + math.sin(t*2)*3
+        local speed = 10 + math.cos(t*3)*10
 
-        bp.Position = torso.Position + offsetSide + offsetDepth + offsetVert
+        local x = math.sin(t * speed) * radius
+        local y = math.cos(t * speed * 1.5) * 3
+        local z = math.cos(t * speed) * radius
 
-        -- Detecção: quando a bola está perto do HRP do alvo, aplica fling
-        local targetHRP = tchar:FindFirstChild("HumanoidRootPart")
-        if targetHRP then
-            local dist = (Ball.Position - targetHRP.Position).Magnitude
-            if dist <= TOUCH_RADIUS then
-                if not flung then
-                    flung = true
-                    ApplyFling(targetHRP)
-                    -- Reset cooldown do flung após um tempo
-                    task.delay(0.3, function()
-                        flung = false
-                    end)
-                end
-            end
+        local targetPos = hrp.Position + Vector3.new(x,y,z)
+
+        -- ⚡ TELEPORTE MICRO (FORÇA IMPACTO)
+        Ball.CFrame = CFrame.new(targetPos)
+
+        -- 💥 IMPULSO DIRECIONAL FORTE
+        local dir = (targetPos - Ball.Position)
+        if dir.Magnitude > 0 then
+            bv.Velocity = dir.Unit * (800 + math.random(200,600))
+        end
+
+        -- 💣 BURST ALEATÓRIO (AUMENTA FLING REAL)
+        if math.random(1,5) == 1 then
+            bv.Velocity = Vector3.new(
+                math.random(-2000,2000),
+                math.random(500,2500),
+                math.random(-2000,2000)
+            )
         end
     end)
 end
 
--- Toggle Fling Ball V2
+-- 🔘 TOGGLE
 Troll:AddToggle({
-    Name = "Fling Ball V2",
+    Name = "Orbit Ball GOD",
     Default = false,
     Callback = function(state)
-        local target = game:GetService("Players")[selectedPlayerName]
         if state then
-            -- Limpa loop anterior se existir
-            if stopBallLoop then
-                stopBallLoop()
-                stopBallLoop = nil
-            end
-            if target then
-                BallFling(target)
-                print("[FlingBall] Ligada em: " .. target.Name)
-            else
-                warn("[FlingBall] Selecione um jogador!")
-            end
+            if stopOrbit then stopOrbit() end
+            OrbitBallGod()
         else
-            if stopBallLoop then
-                stopBallLoop()
-                stopBallLoop = nil
-                print("[FlingBall] Desligada")
+            if stopOrbit then
+                stopOrbit()
+                stopOrbit = nil
             end
         end
     end
 })
-
-Troll:AddToggle({
-    Name = "Annoy VOLTOU 😎",
-    Default = false,
-    Callback = function(state)
-        crashAtivo = state
-
-        if crashConnection then
-            crashConnection:Disconnect()
-            crashConnection = nil
-        end
-
-        if crashAtivo then
-            local target = game.Players:FindFirstChild(selectedPlayerName)
-
-            if target then
-                selectedPlayer = target
-                local lastFling = 0
-
-                crashConnection = RunService.Stepped:Connect(function()
-                    -- Cooldown de 0.1s entre cada fling (evita bloqueio por spam)
-                    if tick() - lastFling < 0.1 then return end
-                    lastFling = tick()
-
-                    if not selectedPlayer or not selectedPlayer.Character then return end
-
-                    local char = selectedPlayer.Character
-                    local hrp = char:FindFirstChild("HumanoidRootPart")
-                    local hum = char:FindFirstChildOfClass("Humanoid")
-
-                    if not hrp or not hum or hum.Health <= 0 then return end
-
-                    TriggerCrashOn(selectedPlayer, 10)
-
-                    -- Fling direto no HRP como backup caso TriggerCrashOn falhe
-                    local bv = Instance.new("BodyVelocity")
-                    bv.Velocity = Vector3.new(
-                        math.random(-1, 1) * 1e6,
-                        1e6,
-                        math.random(-1, 1) * 1e6
-                    )
-                    bv.MaxForce = Vector3.new(1e9, 1e9, 1e9)
-                    bv.P = 1e9
-                    bv.Parent = hrp
-                    game:GetService("Debris"):AddItem(bv, 0.05)
-                end)
-
-                print("[Annoy] Ativo em: " .. selectedPlayer.Name)
-            else
-                warn("[Annoy] Nenhum player selecionado!")
-                crashAtivo = false
-            end
-        else
-            print("[Annoy] Desativado")
-        end
-    end
-})
-
 
 local Players = game:GetService("Players")
 local RS = game:GetService("ReplicatedStorage")
