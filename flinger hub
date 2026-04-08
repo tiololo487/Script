@@ -551,21 +551,59 @@ Troll:AddToggle({
 
 local Players = game:GetService("Players")
 local RS = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
 local running = false
 
+-- pegar bola com segurança máxima
 local function getBall(player, character, backpack, serverBalls)
-    if not backpack:FindFirstChild("SoccerBall") then
-        RS.RE:FindFirstChild("1Too1l"):InvokeServer("PickingTools", "SoccerBall")
+    local tool = backpack:FindFirstChild("SoccerBall")
+
+    if not tool then
+        local remote = RS:WaitForChild("RE", 5)
+        if remote then
+            local func = remote:FindFirstChild("1Too1l")
+            if func then
+                pcall(function()
+                    func:InvokeServer("PickingTools", "SoccerBall")
+                end)
+            end
+        end
     end
 
-    repeat task.wait() until backpack:FindFirstChild("SoccerBall")
-    backpack.SoccerBall.Parent = character
+    tool = backpack:WaitForChild("SoccerBall", 5)
+    if not tool then return nil end
 
-    repeat task.wait() until serverBalls:FindFirstChild("Soccer" .. player.Name)
-    character.SoccerBall.Parent = backpack
+    tool.Parent = character
 
-    return serverBalls:FindFirstChild("Soccer" .. player.Name)
+    local ball = serverBalls:WaitForChild("Soccer" .. player.Name, 5)
+
+    tool.Parent = backpack
+
+    return ball
+end
+
+local function setupBall(ball)
+    if not ball then return end
+
+    ball.CanCollide = false
+    ball.Massless = true
+    ball.AssemblyLinearVelocity = Vector3.zero
+
+    pcall(function()
+        ball.CustomPhysicalProperties = PhysicalProperties.new(0.00001, 0, 0)
+    end)
+
+    if ball:FindFirstChild("FlingPower") then
+        ball.FlingPower:Destroy()
+    end
+
+    local bv = Instance.new("BodyVelocity")
+    bv.Name = "FlingPower"
+    bv.Velocity = Vector3.new(1e8, 1e8, 1e8)
+    bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+    bv.P = math.huge
+    bv.Parent = ball
 end
 
 local function FlingBall(target)
@@ -574,81 +612,72 @@ local function FlingBall(target)
     local humanoid = character:WaitForChild("Humanoid")
     local hrp = character:WaitForChild("HumanoidRootPart")
     local backpack = player:WaitForChild("Backpack")
-    local serverBalls = workspace.WorkspaceCom:WaitForChild("001_SoccerBalls")
+
+    local serverBalls = workspace:WaitForChild("WorkspaceCom", 5)
+    if not serverBalls then return end
+    serverBalls = serverBalls:WaitForChild("001_SoccerBalls", 5)
+    if not serverBalls then return end
 
     running = true
 
-    while running and target and target.Parent == Players do
+    while running do
+        if not target or target.Parent ~= Players then break end
+
         local tchar = target.Character
-        if not tchar or not tchar:FindFirstChild("HumanoidRootPart") then
-            task.wait()
+        if not tchar then task.wait() continue end
+
+        local troot = tchar:FindFirstChild("HumanoidRootPart")
+        local thum = tchar:FindFirstChild("Humanoid")
+
+        if not troot then task.wait() continue end
+
+        local ball = serverBalls:FindFirstChild("Soccer" .. player.Name)
+        if not ball then
+            ball = getBall(player, character, backpack, serverBalls)
+        end
+
+        if not ball then
+            task.wait(0.2)
             continue
         end
 
-        local troot = tchar.HumanoidRootPart
-        local thum = tchar:FindFirstChild("Humanoid")
-
-        local ball = serverBalls:FindFirstChild("Soccer" .. player.Name) 
-            or getBall(player, character, backpack, serverBalls)
-
-        -- Física máxima estável
-        ball.CanCollide = false
-        ball.Massless = true
-        ball.CustomPhysicalProperties = PhysicalProperties.new(0.00001, 0, 0)
-
-        if ball:FindFirstChild("FlingPower") then
-            ball.FlingPower:Destroy()
-        end
-
-        local bv = Instance.new("BodyVelocity")
-        bv.Name = "FlingPower"
-        bv.Velocity = Vector3.new(1e9, 1e9, 1e9)
-        bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-        bv.P = math.huge
-        bv.Parent = ball
+        setupBall(ball)
 
         workspace.CurrentCamera.CameraSubject = thum or humanoid
 
         local start = tick()
 
-        repeat
-            if not running then break end
+        while running and tchar.Parent do
+            local vel = troot.AssemblyLinearVelocity
+            local predicted = troot.Position + (vel * 0.12)
 
-            local vel = troot.Velocity
-            local pos = troot.Position
+            -- posicionamento ultra consistente
+            ball.CFrame =
+                CFrame.new(predicted) *
+                CFrame.Angles(
+                    math.rad(math.random(0,360)),
+                    math.rad(math.random(0,360)),
+                    math.rad(math.random(0,360))
+                )
 
-            -- 🔮 previsão real (prediction)
-            local predicted = pos + (vel * 0.15)
-
-            -- ⚡ múltiplos offsets pra garantir hit
-            for i = 1, 5 do
-                ball.CFrame =
-                    CFrame.new(predicted) *
-                    CFrame.Angles(
-                        math.rad(math.random(0,360)),
-                        math.rad(math.random(0,360)),
-                        math.rad(math.random(0,360))
-                    )
-
-                task.wait()
-            end
-
-            -- fallback: varrer corpo inteiro
-            if vel.Magnitude < 2 then
+            -- fallback (garante hit)
+            if vel.Magnitude < 5 then
                 for _, part in ipairs(tchar:GetChildren()) do
-                    if part:IsA("BasePart") and not part.Anchored then
+                    if part:IsA("BasePart") then
                         ball.CFrame = part.CFrame
-                        task.wait()
+                        RunService.Heartbeat:Wait()
                     end
                 end
             end
 
-            task.wait()
-
-        until vel.Magnitude > 1000
-            or (thum and thum.Health <= 0)
+            if (thum and thum.Health <= 0)
             or not tchar:IsDescendantOf(workspace)
-            or tick() - start > 5
+            or tick() - start > 6 then
+                break
+            end
+
+            RunService.Heartbeat:Wait()
+        end
 
         workspace.CurrentCamera.CameraSubject = humanoid
         task.wait(0.1)
@@ -656,7 +685,7 @@ local function FlingBall(target)
 end
 
 Troll:AddToggle({
-    Name = "Fling Ball BETA",
+    Name = "Fling Ball FIXED",
     Default = false,
     Callback = function(state)
         if state then
