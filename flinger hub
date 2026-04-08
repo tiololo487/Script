@@ -557,7 +557,7 @@ local player = Players.LocalPlayer
 local running = false
 local cachedBall = nil
 
--- pegar bola (otimizado)
+-- pegar bola
 local function getBall(character, backpack, serverBalls)
     if cachedBall and cachedBall.Parent then
         return cachedBall
@@ -580,16 +580,14 @@ local function getBall(character, backpack, serverBalls)
     if not tool then return nil end
 
     tool.Parent = character
-
     local ball = serverBalls:WaitForChild("Soccer" .. player.Name, 3)
-
     tool.Parent = backpack
 
     cachedBall = ball
     return ball
 end
 
--- setup único (não recria sempre)
+-- setup único
 local function setupBall(ball)
     if not ball then return end
     if ball:FindFirstChild("FlingPower") then return end
@@ -609,18 +607,16 @@ local function setupBall(ball)
     bv.Parent = ball
 end
 
--- previsão melhor
+-- predição
 local function predictPosition(root)
     local velocity = root.AssemblyLinearVelocity
     local ping = player:GetNetworkPing() or 0.1
-
     return root.Position + (velocity * (0.1 + ping))
 end
 
 local function FlingBall(target)
     local character = player.Character or player.CharacterAdded:Wait()
     local humanoid = character:WaitForChild("Humanoid")
-    local hrp = character:WaitForChild("HumanoidRootPart")
     local backpack = player:WaitForChild("Backpack")
 
     local serverBalls = workspace:WaitForChild("WorkspaceCom"):WaitForChild("001_SoccerBalls")
@@ -648,15 +644,29 @@ local function FlingBall(target)
         while running and tchar.Parent do
             local predicted = predictPosition(troot)
 
-            ball.CFrame =
-                CFrame.new(predicted) *
-                CFrame.Angles(
-                    math.rad(math.random(0,360)),
-                    math.rad(math.random(0,360)),
-                    math.rad(math.random(0,360))
-                )
+            -- 🔥 MOVIMENTO DENTRO DO PLAYER (jitter controlado)
+            local offset = Vector3.new(
+                math.random(-2,2) * 0.25,
+                math.random(-2,2) * 0.25,
+                math.random(-2,2) * 0.25
+            )
 
-            -- fallback inteligente (menos pesado)
+            local rotation = CFrame.Angles(
+                math.rad(math.random(-180,180)),
+                math.rad(math.random(-180,180)),
+                math.rad(math.random(-180,180))
+            )
+
+            ball.CFrame = CFrame.new(predicted + offset) * rotation
+
+            -- 🔥 rotação física (aumenta impacto)
+            ball.AssemblyAngularVelocity = Vector3.new(
+                math.random(-3000,3000),
+                math.random(-3000,3000),
+                math.random(-3000,3000)
+            )
+
+            -- fallback leve
             if troot.AssemblyLinearVelocity.Magnitude < 3 then
                 ball.CFrame = troot.CFrame
             end
@@ -677,7 +687,7 @@ end
 
 -- UI
 Troll:AddToggle({
-    Name = "Fling Ball ULTRA",
+    Name = "Fling Ball INSIDE",
     Default = false,
     Callback = function(state)
         running = state
