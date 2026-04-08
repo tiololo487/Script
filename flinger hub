@@ -735,3 +735,220 @@ Troll:AddToggle({
         end
     end
 })
+
+Troll:AddParagraph({
+    Title = "fling sofás",
+    Content = "Use essa função para aplicar fling usando sofás."
+})
+
+local Players = game:GetService("Players")
+local RS = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+
+local LocalPlayer = Players.LocalPlayer
+local cam = workspace.CurrentCamera
+
+local flingActive = false
+
+Troll:AddToggle({
+    Name = "Auto Fling (Couch OP)",
+    Default = false,
+
+    Callback = function(state)
+        flingActive = state
+
+        if not state then return end
+        if not selectedPlayerName then return end
+
+        local target = Players:FindFirstChild(selectedPlayerName)
+        if not target or not target.Character then return end
+
+        local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+        local root = char:WaitForChild("HumanoidRootPart")
+        local hum = char:FindFirstChildOfClass("Humanoid")
+
+        local tchar = target.Character
+        local troot = tchar and tchar:FindFirstChild("HumanoidRootPart")
+        if not troot then return end
+
+        local original = root.CFrame
+
+        -- limpar tools
+        pcall(function()
+            RS.RE:WaitForChild("1Clea1rTool1s"):FireServer("ClearAllTools")
+        end)
+
+        task.wait(0.2)
+
+        -- pegar sofá
+        pcall(function()
+            RS.RE:WaitForChild("1Too1l"):InvokeServer("PickingTools", "Couch")
+        end)
+
+        task.wait(0.3)
+
+        local tool = LocalPlayer.Backpack:FindFirstChild("Couch")
+        if tool then
+            tool.Parent = char
+        end
+
+        task.wait(0.2)
+
+        -- sentar
+        game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.F, false, game)
+        task.wait(0.25)
+
+        -- física
+        workspace.FallenPartsDestroyHeight = 0/0
+
+        local bv = Instance.new("BodyVelocity")
+        bv.Name = "FlingForce"
+        bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+        bv.Parent = root
+
+        hum:SetStateEnabled(Enum.HumanoidStateType.Seated, false)
+        hum.PlatformStand = false
+
+        cam.CameraSubject = troot
+
+        task.spawn(function()
+            local angle = 0
+
+            while flingActive and target and target.Character do
+                local tchar = target.Character
+                local troot = tchar and tchar:FindFirstChild("HumanoidRootPart")
+                local thum = tchar and tchar:FindFirstChildOfClass("Humanoid")
+
+                if not troot or not thum then break end
+                if thum.Health <= 0 then break end
+
+                angle += 60
+
+                -- 🔮 previsão
+                local predicted = troot.Position + (troot.Velocity * 0.15)
+
+                -- 🌀 orbitar (muito mais eficiente que CFrame fixo)
+                local offset = CFrame.new(
+                    math.cos(angle) * 3,
+                    0,
+                    math.sin(angle) * 3
+                )
+
+                root.CFrame = CFrame.new(predicted) * offset
+
+                -- ⚡ força constante
+                bv.Velocity = Vector3.new(
+                    math.random(-5e7,5e7),
+                    math.random(-5e7,5e7),
+                    math.random(-5e7,5e7)
+                )
+
+                root.RotVelocity = Vector3.new(
+                    math.random(-1e6,1e6),
+                    math.random(-1e6,1e6),
+                    math.random(-1e6,1e6)
+                )
+
+                RunService.Heartbeat:Wait()
+            end
+
+            -- 🔻 cleanup
+            flingActive = false
+
+            if bv then bv:Destroy() end
+
+            hum:SetStateEnabled(Enum.HumanoidStateType.Seated, true)
+            hum.PlatformStand = false
+
+            root.CFrame = original
+            cam.CameraSubject = hum
+
+            for _, p in ipairs(char:GetDescendants()) do
+                if p:IsA("BasePart") then
+                    p.Velocity = Vector3.zero
+                    p.RotVelocity = Vector3.zero
+                end
+            end
+
+            hum:UnequipTools()
+        end)
+    end
+})
+
+local lag = Window:MakeTab({"Lag Server", "bomb"})
+
+local Players = game:GetService("Players")
+local RS = game:GetService("ReplicatedStorage")
+local StarterGui = game:GetService("StarterGui")
+
+local LocalPlayer = Players.LocalPlayer
+
+lag:AddButton({
+    Name = "Shutdown Server (Improved)",
+
+    Callback = function()
+        local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+        local root = char:WaitForChild("HumanoidRootPart")
+
+        local oldcf = root.CFrame
+
+        local remote = RS:FindFirstChild("RE")
+        if not remote then return end
+
+        local toolRemote = remote:FindFirstChild("1Too1l")
+        if not toolRemote then return end
+
+        -- 🔥 SPAM CONTROLADO (mais eficiente que 495 seco)
+        for i = 1, 250 do
+            pcall(function()
+                toolRemote:InvokeServer("PickingTools", "FireHose")
+            end)
+
+            local hose = LocalPlayer.Backpack:FindFirstChild("FireHose")
+            if hose and hose:FindFirstChild("ToolSound") then
+                pcall(function()
+                    hose.ToolSound:FireServer("FireHose", "DestroyFireHose")
+                end)
+            end
+
+            task.wait(0.01) -- evita crash imediato
+        end
+
+        -- 📍 TELEPORTE CONTROLADO
+        root.CFrame = CFrame.new(1e6, -400, 1e6)
+
+        repeat task.wait() until not root.Parent
+        repeat task.wait() until LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+
+        char = LocalPlayer.Character
+        root = char:WaitForChild("HumanoidRootPart")
+
+        root.CFrame = oldcf
+
+        StarterGui:SetCore("SendNotification", {
+            Title = "Lag Script",
+            Text = "Fase 1 completa",
+            Duration = 4
+        })
+
+        task.wait(0.5)
+
+        -- 🔁 REEQUIPAR TODOS
+        for _, tool in ipairs(LocalPlayer.Backpack:GetChildren()) do
+            if tool.Name == "FireHose" then
+                tool.Parent = char
+            end
+        end
+
+        StarterGui:SetCore("SendNotification", {
+            Title = "Lag Script",
+            Text = "Fase 2 iniciada...",
+            Duration = 4
+        })
+
+        task.wait(0.5)
+
+        -- 📍 SEGUNDO TELEPORTE
+        root.CFrame = CFrame.new(9999, -400, 9999)
+    end
+})
