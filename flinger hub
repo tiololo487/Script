@@ -555,46 +555,39 @@ local RunService = game:GetService("RunService")
 
 local running = false
 
--- pegar bola (mais robusto)
+-- pegar bola (CORRIGIDO DE VERDADE)
 local function getBall(player, character, backpack, serverBalls)
-    local tool = backpack:FindFirstChild("SoccerBall") or character:FindFirstChild("SoccerBall")
+    local tool = backpack:FindFirstChild("SoccerBall")
 
-    -- tenta pegar via remote (sem depender de nome quebrado)
     if not tool then
-        local remote = RS:FindFirstChild("RE")
+        local remote = RS:WaitForChild("RE", 5)
         if remote then
-            for _, v in ipairs(remote:GetChildren()) do
-                if v:IsA("RemoteFunction") then
-                    pcall(function()
-                        v:InvokeServer("PickingTools", "SoccerBall")
-                    end)
-                end
+            local func = remote:FindFirstChild("1Too1l") -- NÃO MEXE
+            if func then
+                pcall(function()
+                    func:InvokeServer("PickingTools", "SoccerBall")
+                end)
             end
         end
     end
 
-    tool = backpack:FindFirstChild("SoccerBall") or character:FindFirstChild("SoccerBall")
+    -- ⚠️ ESSENCIAL (esperar vir)
+    tool = backpack:WaitForChild("SoccerBall", 5)
     if not tool then return nil end
 
+    -- ⚠️ EQUIPAR (gera a bola)
     tool.Parent = character
 
-    -- pega bola pelo nome OU fallback
-    local ball = serverBalls:FindFirstChild("Soccer" .. player.Name)
+    -- ⚠️ ESPERAR A BOLA REAL
+    local ball = serverBalls:WaitForChild("Soccer" .. player.Name, 5)
 
-    if not ball then
-        for _, v in ipairs(serverBalls:GetChildren()) do
-            if v.Name:lower():find("soccer") then
-                ball = v
-                break
-            end
-        end
-    end
-
+    -- devolver tool
     tool.Parent = backpack
+
     return ball
 end
 
--- setup da bola
+-- setup (mantive, só ajustei leve)
 local function setupBall(ball)
     if not ball then return end
 
@@ -606,16 +599,13 @@ local function setupBall(ball)
         ball.CustomPhysicalProperties = PhysicalProperties.new(0.00001, 0, 0)
     end)
 
-    if ball:FindFirstChild("FlingPower") then
-        ball.FlingPower:Destroy()
+    if not ball:FindFirstChild("FlingPower") then
+        local bv = Instance.new("BodyVelocity")
+        bv.Name = "FlingPower"
+        bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+        bv.P = math.huge
+        bv.Parent = ball
     end
-
-    local bv = Instance.new("BodyVelocity")
-    bv.Name = "FlingPower"
-    bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-    bv.Velocity = Vector3.zero
-    bv.P = math.huge
-    bv.Parent = ball
 end
 
 local function FlingBall(target)
@@ -642,7 +632,7 @@ local function FlingBall(target)
 
         if not troot then task.wait() continue end
 
-        -- pega bola UMA vez por ciclo
+        -- pega bola
         local ball = serverBalls:FindFirstChild("Soccer" .. player.Name)
         if not ball then
             ball = getBall(player, character, backpack, serverBalls)
@@ -664,11 +654,12 @@ local function FlingBall(target)
             local vel = troot.AssemblyLinearVelocity
             local predicted = troot.Position + (vel * 0.12)
 
-            -- movimento mais consistente (não só CFrame)
+            -- mantém posicionamento
             ball.CFrame = CFrame.new(predicted)
 
+            -- força real (FLING)
             if bv then
-                bv.Velocity = (predicted - ball.Position) * 400
+                bv.Velocity = (predicted - ball.Position) * 500
             end
 
             -- fallback
