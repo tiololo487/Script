@@ -721,7 +721,7 @@ local function lagarJogoPhone(phone)
     end
 end
 
-Tab13:AddToggle({
+TabLag:AddToggle({
     Name = "Lag com Telefone",
     Default = false,
     Callback = function(state)
@@ -753,6 +753,7 @@ Tab13:AddParagraph({
 -- Lag com Bomba (COMPLETO)
 --==================================================
 local Section = TabLag:AddSection({ Name = "Lag com Bomba" })
+
 local BombActive = false
 
 TabLag:AddToggle({
