@@ -705,3 +705,100 @@ Troll:AddToggle({
         end
     end
 })
+
+local Lag= Window:MakeTab({"lag", "lag"})
+
+local function lagarJogoPhone(phone)
+    while toggles.LagPhone do
+        if phone then
+            game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = phone.CFrame
+            clickNormally(phone)
+        else
+            warn("Telefone não encontrado.")
+            break
+        end
+        task.wait(0.01)
+    end
+end
+
+Tab13:AddToggle({
+    Name = "Lag com Telefone",
+    Default = false,
+    Callback = function(state)
+        toggles.LagPhone = state
+        if state then
+            local phone =
+                workspace.WorkspaceCom["001_CommercialStores"]
+                .CommercialStorage1.Store.Tools:FindFirstChild("Iphone")
+
+            if phone then
+                task.spawn(function()
+                    lagarJogoPhone(phone)
+                end)
+            else
+                warn("Telefone não encontrado.")
+            end
+        else
+            print("Lag com Telefone desativado.")
+        end
+    end
+})
+
+Tab13:AddParagraph({
+    "Informação de Lag",
+    "O script começa a causar lag após 35 segundos"
+})
+
+--==================================================
+-- Lag com Bomba (COMPLETO)
+--==================================================
+local Section = TabLag:AddSection({ Name = "Lag com Bomba" })
+local BombActive = false
+
+TabLag:AddToggle({
+    Name = "Lag com Bomba",
+    Default = false,
+    Callback = function(v)
+        BombActive = v
+        if not v then
+            print("Lag com Bomba desativado.")
+            return
+        end
+
+        local Player = game.Players.LocalPlayer
+        local Char = Player.Character or Player.CharacterAdded:Wait()
+        local HRP = Char:WaitForChild("HumanoidRootPart")
+        local Bomb =
+            workspace.WorkspaceCom["001_CriminalWeapons"].GiveTools:FindFirstChild("Bomb")
+
+        if not Bomb then
+            warn("Bomba não encontrada.")
+            BombActive = false
+            return
+        end
+
+        task.spawn(function()
+            while BombActive do
+                if Bomb:FindFirstChild("ClickDetector") then
+                    HRP.CFrame = Bomb.CFrame
+                    fireclickdetector(Bomb.ClickDetector)
+                end
+                task.wait(0.00001)
+            end
+        end)
+
+        task.spawn(function()
+            while BombActive do
+                local VIM = game:GetService("VirtualInputManager")
+                VIM:SendMouseButtonEvent(500, 500, 0, true, game, 0)
+                task.wait(1.5)
+                VIM:SendMouseButtonEvent(500, 500, 0, false, game, 0)
+
+                game:GetService("ReplicatedStorage").RE["1Blo1wBomb1sServe1r"]
+                    :FireServer("Bomb" .. Player.Name)
+
+                task.wait(1.5)
+            end
+        end)
+    end
+})
