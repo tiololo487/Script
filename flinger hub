@@ -86,11 +86,11 @@ Troll:AddButton({
 })
 
 Info:AddParagraph({ "Nome do Hub:", "troller Hub | Brookhaven Edition" })
-InfoTab:AddParagraph({ "Desenvolvedores:", "🔥just living" })
-InfoTab:AddParagraph({ "Versão:", "1 - " })
-InfoTab:AddParagraph({ "Idioma:", "Português (Brasil)" })
-InfoTab:AddParagraph({ "Jogo Principal:", "Brookhaven RP 🏡" })
-InfoTab:AddParagraph({ "Compatibilidade:", "todos dispositivos são compatíveis"})
+Info:AddParagraph({ "Desenvolvedores:", "🔥just living" })
+Info:AddParagraph({ "Versão:", "1 - " })
+Info:AddParagraph({ "Idioma:", "Português (Brasil)" })
+Info:AddParagraph({ "Jogo Principal:", "Brookhaven RP 🏡" })
+Info:AddParagraph({ "Compatibilidade:", "todos dispositivos são compatíveis"})
 atoa:AddParagraph({ "
 . . . . .        ........
  .       .       .       .
@@ -102,3 +102,4 @@ atoa:AddParagraph({ "
 .                       .       .
 .                       .      .
 ............................" })
+
