@@ -721,7 +721,7 @@ local function lagarJogoPhone(phone)
     end
 end
 
-TabLag:AddToggle({
+Lag:AddToggle({
     Name = "Lag com Telefone",
     Default = false,
     Callback = function(state)
@@ -744,7 +744,7 @@ TabLag:AddToggle({
     end
 })
 
-Tab13:AddParagraph({
+lag:AddParagraph({
     "Informação de Lag",
     "O script começa a causar lag após 35 segundos"
 })
@@ -756,7 +756,7 @@ local Section = TabLag:AddSection({ Name = "Lag com Bomba" })
 
 local BombActive = false
 
-TabLag:AddToggle({
+Lag:AddToggle({
     Name = "Lag com Bomba",
     Default = false,
     Callback = function(v)
@@ -801,5 +801,224 @@ TabLag:AddToggle({
                 task.wait(1.5)
             end
         end)
+    end
+})
+
+local expansionModel = nil
+local expansionSound = nil
+local originalSky = nil
+local cancelExpansion = false
+
+troll:AddButton({
+    Name = "[🌌🚀] Expansão de Domínio (by Sr_Luiz🥱)",
+    Description = "Isso é muito OP e causa glitches no cliente dos jogadores!",
+    Callback = function()
+        local TextChatService = game:GetService("TextChatService")
+        local Lighting = game:GetService("Lighting")
+        local Players = game:GetService("Players")
+        local ReplicatedStorage = game:GetService("ReplicatedStorage")
+        local Player = Players.LocalPlayer
+
+        -- Envia mensagem no chat
+        if TextChatService.ChatVersion == Enum.ChatVersion.TextChatService then
+            TextChatService.TextChannels.RBXGeneral:SendAsync(
+                "[🌌🚀] " .. Player.DisplayName .. " ativou a Expansão de Domínio!"
+            )
+        else
+            print("[🌌🚀] Expansão de Domínio ativada!")
+        end
+
+        -- Função principal de ativação
+        local function ativarDominio()
+            local char = Player.Character or Player.CharacterAdded:Wait()
+            local hrp = char:WaitForChild("HumanoidRootPart")
+
+            expansionModel = Instance.new("Model", workspace)
+            expansionModel.Name = "InfiniteVoid"
+
+            local esfera = Instance.new("Part")
+            esfera.Shape = Enum.PartType.Ball
+            esfera.Size = Vector3.new(300, 300, 300)
+            esfera.Position = hrp.Position
+            esfera.Anchored = true
+            esfera.CanCollide = false
+            esfera.Material = Enum.Material.ForceField
+            esfera.Transparency = 0.3
+            esfera.Color = Color3.fromRGB(0, 0, 0)
+            esfera.Parent = expansionModel
+
+            local luz = Instance.new("PointLight", esfera)
+            luz.Color = Color3.fromRGB(0, 153, 255)
+            luz.Brightness = 10
+            luz.Range = 300
+
+            local ps = Instance.new("ParticleEmitter", esfera)
+            ps.Texture = "rbxassetid://243660364"
+            ps.Color = ColorSequence.new(Color3.fromRGB(0, 153, 255))
+            ps.LightEmission = 1
+            ps.Size = NumberSequence.new(3)
+            ps.Transparency = NumberSequence.new(0.2)
+            ps.Rate = 1000
+            ps.Lifetime = NumberRange.new(2)
+            ps.Speed = NumberRange.new(0)
+            ps.VelocitySpread = 180
+
+            expansionSound = Instance.new("Sound", esfera)
+            expansionSound.SoundId = "rbxassetid://1843527678"
+            expansionSound.Volume = 2
+            expansionSound.Looped = true
+            expansionSound:Play()
+
+            originalSky = Lighting:FindFirstChildOfClass("Sky")
+            if originalSky then
+                originalSky.Parent = nil
+            end
+
+            local newSky = Instance.new("Sky", Lighting)
+            newSky.SkyboxBk = "rbxassetid://159454299"
+            newSky.SkyboxDn = "rbxassetid://159454296"
+            newSky.SkyboxFt = "rbxassetid://159454293"
+            newSky.SkyboxLf = "rbxassetid://159454286"
+            newSky.SkyboxRt = "rbxassetid://159454300"
+            newSky.SkyboxUp = "rbxassetid://159454288"
+        end
+
+        ativarDominio()
+
+        -- Áudio em loop no jogador
+        local selectedAudioID = 140031333626044
+        task.spawn(function()
+            while not cancelExpansion do
+                local RE = ReplicatedStorage:FindFirstChild("RE")
+                if RE and RE:FindFirstChild("1Gu1nSound1s") then
+                    RE["1Gu1nSound1s"]:FireServer(workspace, selectedAudioID, 1)
+                end
+
+                local root = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
+                if root then
+                    local sound = Instance.new("Sound")
+                    sound.SoundId = "rbxassetid://" .. selectedAudioID
+                    sound.Volume = 1
+                    sound.Looped = false
+                    sound.Parent = root
+                    sound:Play()
+                    sound.Ended:Connect(function() sound:Destroy() end)
+                    task.wait(sound.TimeLength + 0.1)
+                else
+                    break
+                end
+            end
+        end)
+
+        -- Atacar todos os jogadores
+        local RE = ReplicatedStorage:WaitForChild("RE")
+        local ClearEvent = RE:FindFirstChild("1Clea1rTool1s")
+        local ToolEvent = RE:FindFirstChild("1Too1l")
+        local FireEvent = RE:FindFirstChild("1Gu1n")
+
+        local function clearAllTools()
+            if ClearEvent then
+                ClearEvent:FireServer("ClearAllTools")
+            end
+        end
+
+        local function getAssault()
+            if ToolEvent then
+                ToolEvent:InvokeServer("PickingTools", "Assault")
+            end
+        end
+
+        local function hasAssault()
+            return Player.Backpack:FindFirstChild("Assault") ~= nil
+        end
+
+        local function fireAtPart(targetPart)
+            local gunScript = Player.Backpack:FindFirstChild("Assault")
+                and Player.Backpack.Assault:FindFirstChild("GunScript_Local")
+
+            if not gunScript or not targetPart then return end
+
+            local args = {
+                targetPart,
+                targetPart,
+                Vector3.new(1e14, 1e14, 1e14),
+                targetPart.Position,
+                gunScript:FindFirstChild("MuzzleEffect"),
+                gunScript:FindFirstChild("HitEffect"),
+                0,
+                0,
+                { false },
+                {
+                    25,
+                    Vector3.new(100, 100, 100),
+                    BrickColor.new(29),
+                    0.25,
+                    Enum.Material.SmoothPlastic,
+                    0.25
+                },
+                true,
+                false
+            }
+
+            FireEvent:FireServer(unpack(args))
+        end
+
+        local function fireAtAllPlayers(times)
+            for i = 1, times do
+                for _, plr in ipairs(Players:GetPlayers()) do
+                    if plr ~= Player and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+                        fireAtPart(plr.Character.HumanoidRootPart)
+                        task.wait(0.1)
+                    end
+                end
+            end
+        end
+
+        task.spawn(function()
+            while not cancelExpansion do
+                clearAllTools()
+                getAssault()
+                repeat task.wait(0.2) until hasAssault()
+                fireAtAllPlayers(3)
+                task.wait(1)
+            end
+        end)
+    end
+})
+
+
+
+troll:AddButton({
+    Name = "[❌] Cancelar Expansão de Domínio",
+    Description = "Remove o domínio e restaura o ambiente normal.",
+    Callback = function()
+        cancelExpansion = true
+
+        if expansionSound then
+            expansionSound:Stop()
+            expansionSound:Destroy()
+            expansionSound = nil
+        end
+
+        if expansionModel and expansionModel.Parent then
+            expansionModel:Destroy()
+            expansionModel = nil
+        end
+
+        local Lighting = game:GetService("Lighting")
+        local currentSky = Lighting:FindFirstChildOfClass("Sky")
+        if currentSky then currentSky:Destroy() end
+
+        if originalSky then
+            originalSky.Parent = Lighting
+            originalSky = nil
+        end
+
+        local TextChatService = game:GetService("TextChatService")
+        if TextChatService.ChatVersion == Enum.ChatVersion.TextChatService then
+            TextChatService.TextChannels.RBXGeneral:SendAsync("[❌] Expansão de Domínio cancelada.")
+        else
+            print("[❌] Expansão de Domínio cancelada.")
+        end
     end
 })
