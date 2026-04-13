@@ -752,7 +752,7 @@ lag:AddParagraph({
 --==================================================
 -- Lag com Bomba (COMPLETO)
 --==================================================
-local Section = TabLag:AddSection({ Name = "Lag com Bomba" })
+local Section = Lag:AddSection({ Name = "Lag com Bomba" })
 
 local BombActive = false
 
@@ -809,7 +809,7 @@ local expansionSound = nil
 local originalSky = nil
 local cancelExpansion = false
 
-troll:AddButton({
+Troll:AddButton({
     Name = "[🌌🚀] Expansão de Domínio (by Sr_Luiz🥱)",
     Description = "Isso é muito OP e causa glitches no cliente dos jogadores!",
     Callback = function()
@@ -988,7 +988,7 @@ troll:AddButton({
 
 
 
-troll:AddButton({
+Troll:AddButton({
     Name = "[❌] Cancelar Expansão de Domínio",
     Description = "Remove o domínio e restaura o ambiente normal.",
     Callback = function()
