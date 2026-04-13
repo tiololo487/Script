@@ -385,13 +385,6 @@ OP:AddButton({
         local Players = game:GetService("Players")
         local ReplicatedStorage = game:GetService("ReplicatedStorage")
         local Player = Players.LocalPlayer
-
-        -- Envia mensagem no chat
-        if TextChatService.ChatVersion == Enum.ChatVersion.TextChatService then
-            TextChatService.TextChannels.RBXGeneral:SendAsync(
-                "[🌌🚀] " .. Player.DisplayName .. " ativou a Expansão de Domínio!"
-            )
-        else
             print("[🌌🚀] Expansão de Domínio ativada!")
         end
 
@@ -582,11 +575,6 @@ OP:AddButton({
             originalSky.Parent = Lighting
             originalSky = nil
         end
-
-        local TextChatService = game:GetService("TextChatService")
-        if TextChatService.ChatVersion == Enum.ChatVersion.TextChatService then
-            TextChatService.TextChannels.RBXGeneral:SendAsync("[❌] Expansão de Domínio cancelada.")
-        else
             print("[❌] Expansão de Domínio cancelada.")
         end
     end
@@ -783,11 +771,6 @@ OP:AddButton({
         newSky.SkyboxLf = "rbxassetid://159454286"
         newSky.SkyboxRt = "rbxassetid://159454300"
         newSky.SkyboxUp = "rbxassetid://159454288"
-
-        local TextChatService = game:GetService("TextChatService")
-        if TextChatService.ChatVersion == Enum.ChatVersion.TextChatService then
-            TextChatService.TextChannels.RBXGeneral:SendAsync("[❌] Hollow Purple cancelado por Sr_Luiz🥱.")
-        else
             print("[❌] Hollow Purple cancelado.")
         end
     end
