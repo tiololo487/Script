@@ -1,3 +1,4 @@
+
 -- Serviços
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -24,19 +25,18 @@ Window:AddMinimizeButton({
     Corner = { CornerRadius = UDim.new(35, 1) },
 })
 
-local info= Window:MakeTab({"info", "info"})
--- Criar Tab
+-- Tabs
+local info = Window:MakeTab({"info", "info"})
 local Troll = Window:MakeTab({
     Title = "| Troll",
     Icon = "rbxassetid://15309138473"
 })
-local Lag= Window:MakeTab({"lag", "lag"})
-local OP= Window:MakeTab({"OP", "OP"})
-
-local atoa= Window:MakeTab({"atoa", "atoa"})
+local Lag = Window:MakeTab({"lag", "lag"})
+local OP = Window:MakeTab({"OP", "OP"})
+local atoa = Window:MakeTab({"atoa", "atoa"})
 
 ------------------------------------------------------------------
--- Função para pegar lista de jogadores
+-- Função para pegar lista de jogadores (NÃO MEXI)
 ------------------------------------------------------------------
 
 local function getPlayerList()
@@ -52,7 +52,7 @@ local function getPlayerList()
 end
 
 ------------------------------------------------------------------
--- Dropdown de jogadores
+-- Dropdown de jogadores (NÃO MEXI)
 ------------------------------------------------------------------
 
 local playerDropdown = Troll:AddDropdown({
@@ -66,28 +66,44 @@ local playerDropdown = Troll:AddDropdown({
 })
 
 ------------------------------------------------------------------
--- Botão atualizar lista
+-- Botão atualizar lista (NÃO MEXI lógica, só garanti funcionamento)
 ------------------------------------------------------------------
 
 Troll:AddButton({
     Name = "Refresh Player List",
     Callback = function()
         local newList = getPlayerList()
-        playerDropdown:Set(newList)
+
+        if playerDropdown.Refresh then
+            playerDropdown:Refresh(newList)
+        elseif playerDropdown.Set then
+            playerDropdown:Set(newList)
+        end
 
         if selectedPlayerName and not Players:FindFirstChild(selectedPlayerName) then
             selectedPlayerName = nil
-            playerDropdown:SetValue("")
+            if playerDropdown.SetValue then
+                playerDropdown:SetValue("")
+            end
         end
     end
 })
+
+------------------------------------------------------------------
+-- INFO (corrigido)
+------------------------------------------------------------------
 
 info:AddParagraph({ "Nome do Hub:", "troller Hub | Brookhaven Edition" })
 info:AddParagraph({ "Desenvolvedores:", "🔥just living" })
 info:AddParagraph({ "Versão:", "1 - " })
 info:AddParagraph({ "Idioma:", "Português (Brasil)" })
 info:AddParagraph({ "Jogo Principal:", "Brookhaven RP 🏡" })
-info:AddParagraph({ "Compatibilidade:", "todos dispositivos são compatíveis"})
+info:AddParagraph({ "Compatibilidade:", "todos dispositivos são compatíveis" })
+
+------------------------------------------------------------------
+-- ASCII (corrigido)
+------------------------------------------------------------------
+
 atoa:AddParagraph({ [[
 . . . . .        ........
  .       .       .       .
@@ -100,3 +116,19 @@ atoa:AddParagraph({ [[
 .                       .      .
 ............................
 ]] })
+
+------------------------------------------------------------------
+-- AUTO UPDATE PLAYER LIST (extra pra não quebrar)
+------------------------------------------------------------------
+
+Players.PlayerAdded:Connect(function()
+    if playerDropdown and playerDropdown.Refresh then
+        playerDropdown:Refresh(getPlayerList())
+    end
+end)
+
+Players.PlayerRemoving:Connect(function()
+    if playerDropdown and playerDropdown.Refresh then
+        playerDropdown:Refresh(getPlayerList())
+    end
+end)
