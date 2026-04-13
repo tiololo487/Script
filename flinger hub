@@ -591,3 +591,347 @@ OP:AddButton({
         end
     end
 })
+
+local hollowPurpleActive = false
+local hollowParts = {}
+local bloomEffect, colorCorrection, atmosphereEffect, skyEffect
+
+OP:AddButton({
+    Name = "[💥💫] Hollow Purple (by Sr_Luiz🥱)",
+    Description = "Gojo combina azul e vermelho para criar o lendário Hollow Purple!",
+    Callback = function()
+        if hollowPurpleActive then return end
+        hollowPurpleActive = true
+
+        local Players = game:GetService("Players")
+        local Lighting = game:GetService("Lighting")
+        local RunService = game:GetService("RunService")
+        local Player = Players.LocalPlayer
+        local Char = Player.Character or Player.CharacterAdded:Wait()
+        local HRP = Char:WaitForChild("HumanoidRootPart")
+
+        -- ========================
+        -- VISUAL DO CÉU / ILUMINAÇÃO
+        -- ========================
+        local oldSky = Lighting:FindFirstChildOfClass("Sky")
+        if oldSky then oldSky.Parent = nil end
+
+        skyEffect = Instance.new("Sky", Lighting)
+        skyEffect.SkyboxBk = "rbxassetid://159454299"
+        skyEffect.SkyboxDn = "rbxassetid://159454296"
+        skyEffect.SkyboxFt = "rbxassetid://159454293"
+        skyEffect.SkyboxLf = "rbxassetid://159454286"
+        skyEffect.SkyboxRt = "rbxassetid://159454300"
+        skyEffect.SkyboxUp = "rbxassetid://159454288"
+
+        bloomEffect = Instance.new("BloomEffect", Lighting)
+        bloomEffect.Intensity = 2.5
+        bloomEffect.Size = 60
+        bloomEffect.Threshold = 0.8
+
+        colorCorrection = Instance.new("ColorCorrectionEffect", Lighting)
+        colorCorrection.TintColor = Color3.fromRGB(60, 0, 100)
+        colorCorrection.Contrast = 0.5
+        colorCorrection.Saturation = 1.5
+
+        atmosphereEffect = Instance.new("Atmosphere", Lighting)
+        atmosphereEffect.Density = 0.8
+        atmosphereEffect.Offset = 0.2
+        atmosphereEffect.Color = Color3.fromRGB(30, 0, 60)
+        atmosphereEffect.Decay = Color3.fromRGB(60, 0, 90)
+        atmosphereEffect.Glare = 0.5
+        atmosphereEffect.Haze = 2
+
+        -- ========================
+        -- SOM E INÍCIO
+        -- ========================
+        local startSound = Instance.new("Sound", HRP)
+        startSound.SoundId = "rbxassetid://9126546408"
+        startSound.Volume = 4
+        startSound:Play()
+
+        -- Esferas azul e vermelha
+        local blueSphere = Instance.new("Part", workspace)
+        blueSphere.Shape = Enum.PartType.Ball
+        blueSphere.Material = Enum.Material.Neon
+        blueSphere.Color = Color3.fromRGB(0, 50, 255)
+        blueSphere.Size = Vector3.new(50, 50, 50)
+        blueSphere.Anchored = true
+        blueSphere.CanCollide = false
+        blueSphere.Position = HRP.Position + Vector3.new(-80, 20, 0)
+        table.insert(hollowParts, blueSphere)
+
+        local redSphere = Instance.new("Part", workspace)
+        redSphere.Shape = Enum.PartType.Ball
+        redSphere.Material = Enum.Material.Neon
+        redSphere.Color = Color3.fromRGB(255, 20, 0)
+        redSphere.Size = Vector3.new(50, 50, 50)
+        redSphere.Anchored = true
+        redSphere.CanCollide = false
+        redSphere.Position = HRP.Position + Vector3.new(80, 20, 0)
+        table.insert(hollowParts, redSphere)
+
+        -- Partículas
+        local function addParticles(part, color)
+            local p = Instance.new("ParticleEmitter", part)
+            p.Texture = "rbxassetid://243660364"
+            p.Color = ColorSequence.new(color)
+            p.LightEmission = 1
+            p.Size = NumberSequence.new(3)
+            p.Transparency = NumberSequence.new(0.2)
+            p.Rate = 300
+            p.Lifetime = NumberRange.new(1)
+            p.Speed = NumberRange.new(2)
+            p.VelocitySpread = 180
+        end
+
+        addParticles(blueSphere, Color3.fromRGB(0, 100, 255))
+        addParticles(redSphere, Color3.fromRGB(255, 40, 0))
+
+        -- ========================
+        -- ANIMAÇÃO DE FUSÃO
+        -- ========================
+        local t = 0
+        local duration = 5
+        local merged = false
+        local connection
+
+        connection = RunService.Heartbeat:Connect(function(dt)
+            if not hollowPurpleActive then
+                connection:Disconnect()
+                return
+            end
+
+            t += dt
+            if t <= duration then
+                local alpha = t / duration
+                blueSphere.Position = HRP.Position + Vector3.new(-80 + (80 * alpha), 20, 0)
+                redSphere.Position = HRP.Position + Vector3.new(80 - (80 * alpha), 20, 0)
+            elseif not merged then
+                merged = true
+
+                -- Cria esfera roxa gigante
+                local purpleSphere = Instance.new("Part", workspace)
+                purpleSphere.Shape = Enum.PartType.Ball
+                purpleSphere.Material = Enum.Material.Neon
+                purpleSphere.Color = Color3.fromRGB(180, 0, 255)
+                purpleSphere.Size = Vector3.new(120, 120, 120)
+                purpleSphere.Anchored = true
+                purpleSphere.CanCollide = false
+                purpleSphere.Position = HRP.Position + Vector3.new(0, 20, 0)
+                table.insert(hollowParts, purpleSphere)
+
+                local pulseSound = Instance.new("Sound", purpleSphere)
+                pulseSound.SoundId = "rbxassetid://1837635069"
+                pulseSound.Volume = 5
+                pulseSound:Play()
+
+                local light = Instance.new("PointLight", purpleSphere)
+                light.Color = Color3.fromRGB(150, 0, 255)
+                light.Brightness = 20
+                light.Range = 250
+
+                addParticles(purpleSphere, Color3.fromRGB(255, 0, 255))
+
+                game.Debris:AddItem(blueSphere, 0.1)
+                game.Debris:AddItem(redSphere, 0.1)
+
+                -- Expansão visual
+                task.spawn(function()
+                    for i = 1, 80 do
+                        if not hollowPurpleActive then break end
+                        purpleSphere.Size += Vector3.new(3, 3, 3)
+                        purpleSphere.Transparency += 0.012
+                        light.Brightness += 0.4
+                        task.wait(0.03)
+                    end
+                    purpleSphere:Destroy()
+                    hollowPurpleActive = false
+                end)
+            end
+        end)
+    end
+})
+
+-- =========================================================
+-- BOTÃO PARA CANCELAR HOLLOW PURPLE
+-- =========================================================
+
+OP:AddButton({
+    Name = "[❌] Cancelar Hollow Purple",
+    Description = "Cancela o Hollow Purple e restaura o ambiente original.",
+    Callback = function()
+        hollowPurpleActive = false
+
+        for _, obj in ipairs(hollowParts) do
+            if obj and obj.Parent then
+                obj:Destroy()
+            end
+        end
+        hollowParts = {}
+
+        if bloomEffect then bloomEffect:Destroy() end
+        if colorCorrection then colorCorrection:Destroy() end
+        if atmosphereEffect then atmosphereEffect:Destroy() end
+        if skyEffect then skyEffect:Destroy() end
+
+        local Lighting = game:GetService("Lighting")
+        local newSky = Instance.new("Sky", Lighting)
+        newSky.SkyboxBk = "rbxassetid://159454293"
+        newSky.SkyboxDn = "rbxassetid://159454296"
+        newSky.SkyboxFt = "rbxassetid://159454299"
+        newSky.SkyboxLf = "rbxassetid://159454286"
+        newSky.SkyboxRt = "rbxassetid://159454300"
+        newSky.SkyboxUp = "rbxassetid://159454288"
+
+        local TextChatService = game:GetService("TextChatService")
+        if TextChatService.ChatVersion == Enum.ChatVersion.TextChatService then
+            TextChatService.TextChannels.RBXGeneral:SendAsync("[❌] Hollow Purple cancelado por Sr_Luiz🥱.")
+        else
+            print("[❌] Hollow Purple cancelado.")
+        end
+    end
+})
+
+OP:AddButton({
+  Name = "Click Fling Portas [Beta]",
+Description = "Para Usar, Recomendo chegar perto de outras portas, apos ela ir até você, clique no jogador que deseja flingar",
+  Callback = function()
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+
+local LocalPlayer = Players.LocalPlayer
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local HRP = Character:WaitForChild("HumanoidRootPart")
+
+-- Alvo invisível (BlackHole)
+local BlackHole = Instance.new("Part")
+BlackHole.Size = Vector3.new(100000, 100000, 100000)
+BlackHole.Transparency = 1
+BlackHole.Anchored = true
+BlackHole.CanCollide = false
+BlackHole.Name = "BlackHoleTarget"
+BlackHole.Parent = Workspace
+
+-- Attachment base no BlackHole
+local baseAttachment = Instance.new("Attachment")
+baseAttachment.Name = "Luscaa_BlackHoleAttachment"
+baseAttachment.Parent = BlackHole
+
+-- Atualiza posição do BlackHole
+RunService.Heartbeat:Connect(function()
+	BlackHole.CFrame = HRP.CFrame
+end)
+
+-- Lista de portas controladas
+local ControlledDoors = {}
+
+-- Prepara uma porta para ser controlada
+local function SetupPart(part)
+	if not part:IsA("BasePart") or part.Anchored or not string.find(part.Name, "Door") then return end
+	if part:FindFirstChild("Luscaa_Attached") then return end
+
+	part.CanCollide = false
+
+	for _, obj in ipairs(part:GetChildren()) do
+		if obj:IsA("AlignPosition") or obj:IsA("Torque") or obj:IsA("Attachment") then
+			obj:Destroy()
+		end
+	end
+
+	local marker = Instance.new("BoolValue", part)
+	marker.Name = "Luscaa_Attached"
+
+	local a1 = Instance.new("Attachment", part)
+
+	local align = Instance.new("AlignPosition", part)
+	align.Attachment0 = a1
+	align.Attachment1 = baseAttachment
+	align.MaxForce = 1e20
+	align.MaxVelocity = math.huge
+	align.Responsiveness = 99999
+
+	local torque = Instance.new("Torque", part)
+	torque.Attachment0 = a1
+	torque.RelativeTo = Enum.ActuatorRelativeTo.World
+	torque.Torque = Vector3.new(
+		math.random(-10e5, 10e5) * 10000,
+		math.random(-10e5, 10e5) * 10000,
+		math.random(-10e5, 10e5) * 10000
+	)
+
+	table.insert(ControlledDoors, {Part = part, Align = align})
+end
+
+-- Detecta e prepara portas existentes
+for _, obj in ipairs(Workspace:GetDescendants()) do
+	if obj:IsA("BasePart") and string.find(obj.Name, "Door") then
+		SetupPart(obj)
+	end
+end
+
+-- Novas portas no futuro
+Workspace.DescendantAdded:Connect(function(obj)
+	if obj:IsA("BasePart") and string.find(obj.Name, "Door") then
+		SetupPart(obj)
+	end
+end)
+
+-- Flinga jogador com timeout e retorno
+local function FlingPlayer(player)
+	local char = player.Character
+	if not char then return end
+	local targetHRP = char:FindFirstChild("HumanoidRootPart")
+	if not targetHRP then return end
+
+	local targetAttachment = targetHRP:FindFirstChild("SHNMAX_TargetAttachment")
+	if not targetAttachment then
+		targetAttachment = Instance.new("Attachment", targetHRP)
+		targetAttachment.Name = "SHNMAX_TargetAttachment"
+	end
+
+	for _, data in ipairs(ControlledDoors) do
+		if data.Align then
+			data.Align.Attachment1 = targetAttachment
+		end
+	end
+
+	local start = tick()
+	local flingDetected = false
+
+	while tick() - start < 5 do
+		if targetHRP.Velocity.Magnitude >= 20 then
+			flingDetected = true
+			break
+		end
+		RunService.Heartbeat:Wait()
+	end
+
+	-- Sempre retorna as portas
+	for _, data in ipairs(ControlledDoors) do
+		if data.Align then
+			data.Align.Attachment1 = baseAttachment
+		end
+	end
+end
+
+-- Clique (funciona no mobile)
+UserInputService.TouchTap:Connect(function(touchPositions, processed)
+	if processed then return end
+	local pos = touchPositions[1]
+	local camera = Workspace.CurrentCamera
+	local unitRay = camera:ScreenPointToRay(pos.X, pos.Y)
+	local raycast = Workspace:Raycast(unitRay.Origin, unitRay.Direction * 1000)
+
+	if raycast and raycast.Instance then
+		local hit = raycast.Instance
+		local player = Players:GetPlayerFromCharacter(hit:FindFirstAncestorOfClass("Model"))
+		if player and player ~= LocalPlayer then
+			FlingPlayer(player)
+		end
+	end
+end)
+  end
+})
