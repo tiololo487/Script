@@ -25,14 +25,11 @@ Window:AddMinimizeButton({
 })
 
 local info= Window:MakeTab({"info", "info"})
-
 -- Criar Tab
 local Troll = Window:MakeTab({
     Title = "| Troll",
     Icon = "rbxassetid://15309138473"
 })
-
-
 local Lag= Window:MakeTab({"lag", "lag"})
 local OP= Window:MakeTab({"OP", "OP"})
 
@@ -85,13 +82,13 @@ Troll:AddButton({
     end
 })
 
-Info:AddParagraph({ "Nome do Hub:", "troller Hub | Brookhaven Edition" })
-Info:AddParagraph({ "Desenvolvedores:", "🔥just living" })
-Info:AddParagraph({ "Versão:", "1 - " })
-Info:AddParagraph({ "Idioma:", "Português (Brasil)" })
-Info:AddParagraph({ "Jogo Principal:", "Brookhaven RP 🏡" })
-Info:AddParagraph({ "Compatibilidade:", "todos dispositivos são compatíveis"})
-atoa:AddParagraph({ "
+info:AddParagraph({ "Nome do Hub:", "troller Hub | Brookhaven Edition" })
+info:AddParagraph({ "Desenvolvedores:", "🔥just living" })
+info:AddParagraph({ "Versão:", "1 - " })
+info:AddParagraph({ "Idioma:", "Português (Brasil)" })
+info:AddParagraph({ "Jogo Principal:", "Brookhaven RP 🏡" })
+info:AddParagraph({ "Compatibilidade:", "todos dispositivos são compatíveis"})
+atoa:AddParagraph({ [[
 . . . . .        ........
  .       .       .       .
   .      .      .       .
@@ -101,5 +98,5 @@ atoa:AddParagraph({ "
 .                       .        .
 .                       .       .
 .                       .      .
-............................" })
-
+............................
+]] })
