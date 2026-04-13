@@ -752,7 +752,6 @@ lag:AddParagraph({
 --==================================================
 -- Lag com Bomba (COMPLETO)
 --==================================================
-local Section = Lag:AddSection({ Name = "Lag com Bomba" })
 
 local BombActive = false
 
