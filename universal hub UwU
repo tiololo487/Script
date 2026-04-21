@@ -22,3 +22,5 @@ local Window = Library:MakeWindow({
 local info = Window:MakeTab({"info", "info"})
 local popular = Window:MakeTab({"popular", "popular"})
 local OP = Window:MakeTab({"OP", "OP"})
+
+info:AddParagraph({ "Bem essa Hub e brasileira", "peço que não skiden a hub ASS:Tiololo| universal❤️" })
