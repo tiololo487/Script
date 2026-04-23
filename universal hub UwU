@@ -12,7 +12,7 @@ workspace.FallenPartsDestroyHeight = -math.huge
 
 -- Criar Janela
 local Window = Library:MakeWindow({
-    Title = "Tiololo hub | Universal",
+    Title = "Tiololo hub | build a boat",
     SubTitle = "By: ody",
     LoadText = "Carregando a hub<3",
     Flags = "Tiololo<3",
@@ -20,7 +20,65 @@ local Window = Library:MakeWindow({
 })
 
 local info = Window:MakeTab({"info", "info"})
-local popular = Window:MakeTab({"popular", "popular"})
-local OP = Window:MakeTab({"OP", "OP"})
+local popular = Window:MakeTab({"idk", "popular"})
+local farm = Window:MakeTab({"auto farm", "auto farm"})
 
 info:AddParagraph({ "Bem essa Hub e brasileira", "peço que não skiden a hub ASS:Tiololo| universal❤️" })
+
+local tpLoop = false
+
+local positions = {
+    Vector3.new(74.90, 47.23, 1064.37),
+    Vector3.new(-221.37, 51.67, 1634.09),
+    Vector3.new(-183.77, 37.21, 2266.26),
+    Vector3.new(-82.57, 109.39, 3382.52),
+    Vector3.new(-60.72, 163.88, 4058.31),
+    Vector3.new(-84.33, 174.65, 4919.50),
+    Vector3.new(-73.50, 179.68, 6304.15),
+    Vector3.new(-77.97, 138.49, 7077.48),
+    Vector3.new(-35.00, 165.75, 7880.96),
+    Vector3.new(-49.26, -322.81, 9482.43)
+}
+
+local function startTPLoop()
+    local Players = game:GetService("Players")
+    local player = Players.LocalPlayer
+
+    while tpLoop do
+        local char = player.Character
+        local humanoid = char and char:FindFirstChildOfClass("Humanoid")
+
+        if char and humanoid and char:FindFirstChild("HumanoidRootPart") then
+            -- Percorre todas coords
+            for _, pos in ipairs(positions) do
+                if not tpLoop then break end
+
+                char.HumanoidRootPart.CFrame = CFrame.new(pos)
+                task.wait(0.3)
+            end
+
+            -- Finalizou todas → reset
+            if tpLoop and humanoid then
+                humanoid.Health = 0
+            end
+
+            -- Espera respawn
+            player.CharacterAdded:Wait()
+            task.wait(0.5) -- pequeno delay pra garantir carregamento
+
+        else
+            task.wait(1)
+        end
+    end
+end
+
+farm:AddButton({
+    Name = "auto farm",
+    Callback = function()
+        tpLoop = not tpLoop
+
+        if tpLoop then
+            task.spawn(startTPLoop)
+        end
+    end
+})
