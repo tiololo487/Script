@@ -1,0 +1,240 @@
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- GUI
+local gui = Instance.new("ScreenGui")
+gui.Name = "PunchUI"
+gui.Parent = game.CoreGui
+
+-- BOTÃO
+local button = Instance.new("TextButton")
+button.Size = UDim2.new(0, 120, 0, 40)
+button.Position = UDim2.new(0.4, 0, 0.4, 0)
+button.Text = "punch👊"
+button.TextColor3 = Color3.fromRGB(255,255,255)
+button.BackgroundColor3 = Color3.fromRGB(20, 40, 60)
+button.Parent = gui
+
+-- CANTOS ARREDONDADOS
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 12)
+corner.Parent = button
+
+-- BORDA (UIStroke estilo glow)
+local stroke = Instance.new("UIStroke")
+stroke.Thickness = 2
+stroke.Color = Color3.fromRGB(0, 170, 255)
+stroke.Parent = button
+
+-- GRADIENTE (estilo azul)
+local gradient = Instance.new("UIGradient")
+gradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 170, 255)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 85, 255))
+}
+gradient.Parent = button
+
+-- DRAG
+local dragging = false
+local dragInput, dragStart, startPos
+
+button.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = button.Position
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+button.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+        dragInput = input
+    end
+end)
+
+game:GetService("UserInputService").InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        local delta = input.Position - dragStart
+        button.Position = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+    end
+end)
+
+-- FUNÇÃO EMOTE + FLING
+local function QuadPunchFling()
+    local char = LocalPlayer.Character
+    if not char then return end
+
+    local humanoid = char:FindFirstChildOfClass("Humanoid")
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not humanoid or not root then return end
+
+    local anim = Instance.new("Animation")
+    anim.AnimationId = "rbxassetid://94235564114426"
+
+    local track = humanoid:LoadAnimation(anim)
+    track:Play()
+
+    local running = true
+    track.Stopped:Connect(function()
+        running = false
+    end)
+
+    task.spawn(function()
+        while running do
+            for _, plr in pairs(Players:GetPlayers()) do
+                if plr ~= LocalPlayer and plr.Character then
+                    local targetRoot = plr.Character:FindFirstChild("HumanoidRootPart")
+                    if targetRoot then
+                        local dist = (targetRoot.Position - root.Position).Magnitude
+                        
+                        if dist < 6 then
+                            local bv = Instance.new("BodyVelocity")
+                            bv.MaxForce = Vector3.new(1e6,1e6,1e6)
+                            bv.Velocity = (targetRoot.Position - root.Position).Unit * 200
+                            bv.Parent = targetRoot
+
+                            game:GetService("Debris"):AddItem(bv, 0.2)
+                        end
+                    end
+                end
+            end
+            task.wait()
+        end
+    end)
+end
+
+-- CLICK
+button.MouseButton1Click:Connect(function()
+    QuadPunchFling()
+end)
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- GUI
+local gui = Instance.new("ScreenGui")
+gui.Parent = game.CoreGui
+
+-- FUNÇÃO CRIAR BOTÃO
+local function createButton(name, posY, animId)
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(0, 130, 0, 40)
+    button.Position = UDim2.new(0.4, 0, posY, 0)
+    button.Text = name
+    button.TextColor3 = Color3.new(1,1,1)
+    button.BackgroundColor3 = Color3.fromRGB(20,40,60)
+    button.Parent = gui
+
+    -- canto arredondado
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 12)
+    corner.Parent = button
+
+    -- borda glow
+    local stroke = Instance.new("UIStroke")
+    stroke.Thickness = 2
+    stroke.Color = Color3.fromRGB(0,170,255)
+    stroke.Parent = button
+
+    -- gradiente azul
+    local gradient = Instance.new("UIGradient")
+    gradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(0,170,255)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(0,85,255))
+    }
+    gradient.Parent = button
+
+    -- DRAG
+    local dragging, dragInput, dragStart, startPos
+
+    button.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = button.Position
+
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+
+    button.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
+            dragInput = input
+        end
+    end)
+
+    game:GetService("UserInputService").InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - dragStart
+            button.Position = UDim2.new(
+                startPos.X.Scale,
+                startPos.X.Offset + delta.X,
+                startPos.Y.Scale,
+                startPos.Y.Offset + delta.Y
+            )
+        end
+    end)
+
+    -- FUNÇÃO FLING + ANIMAÇÃO
+    button.MouseButton1Click:Connect(function()
+        local char = LocalPlayer.Character
+        if not char then return end
+
+        local humanoid = char:FindFirstChildOfClass("Humanoid")
+        local root = char:FindFirstChild("HumanoidRootPart")
+        if not humanoid or not root then return end
+
+        local anim = Instance.new("Animation")
+        anim.AnimationId = "rbxassetid://"..animId
+
+        local track = humanoid:LoadAnimation(anim)
+        track:Play()
+
+        local running = true
+        track.Stopped:Connect(function()
+            running = false
+        end)
+
+        task.spawn(function()
+            while running do
+                for _, plr in pairs(Players:GetPlayers()) do
+                    if plr ~= LocalPlayer and plr.Character then
+                        local targetRoot = plr.Character:FindFirstChild("HumanoidRootPart")
+                        if targetRoot then
+                            local dist = (targetRoot.Position - root.Position).Magnitude
+
+                            if dist < 7 then
+                                local bv = Instance.new("BodyVelocity")
+                                bv.MaxForce = Vector3.new(1e6,1e6,1e6)
+                                bv.Velocity = (targetRoot.Position - root.Position).Unit * 220
+                                bv.Parent = targetRoot
+
+                                game:GetService("Debris"):AddItem(bv, 0.2)
+                            end
+                        end
+                    end
+                end
+                task.wait()
+            end
+        end)
+    end)
+end
+
+-- BOTÕES
+createButton("Dropkick Fling", 0.4, "127764273000599")
+createButton("Kick Fling", 0.5, "108296873775004")
