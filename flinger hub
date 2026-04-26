@@ -918,3 +918,96 @@ UserInputService.TouchTap:Connect(function(touchPositions, processed)
 end)
   end
 })
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- ===== WHITELIST =====
+local WhitelistData = {
+    ["hiro0881"] = {type = "Dono"},
+    ["luke_jokerHk3"] = {type = "Dono Max 💀"},
+    ["doxPkwsXLBt"] = {type = "Dono Max 💀"},
+    ["teste"] = {type = "Usuário adm"},
+}
+
+local function isWhitelisted(player)
+    local data = WhitelistData[player.Name]
+    if data then
+        return true, data.type
+    end
+    return false, nil
+end
+
+-- ===== VERIFICAÇÃO =====
+local allowed, userType = isWhitelisted(LocalPlayer)
+
+if not allowed then
+    warn("Acesso negado para: " .. LocalPlayer.Name)
+    return -- PARA o script aqui
+end
+
+print("Acesso liberado | Tipo: " .. userType)
+
+-- ===== SCRIPT CONTINUA AQUI =====
+pcall(function()
+    loadstring(game:HttpGet('https://raw.githubusercontent.com/Footagesus/WindUI/refs/heads/main/main.client.lua'))()
+end)
+
+local Window = Library:MakeWindow({
+    Title = "flinger hub admin| Brookhaven",
+    SubTitle = "By: ody",
+    LoadText = "Carregando a hub<3",
+    Flags = "anonymushub_Brookhaven",
+    Size = UDim2.fromScale(0.55, 0.65)
+})
+
+Troll:AddButton({
+    Name = "Verificar",
+    Callback = function()
+        local Players = game:GetService("Players")
+        local TextChatService = game:GetService("TextChatService")
+
+        local LocalPlayer = Players.LocalPlayer
+        local verifying = true
+
+        -- função pra enviar mensagem
+        local function sendMessage(msg)
+            local channel = TextChatService.TextChannels:FindFirstChild("RBXGeneral")
+            if channel then
+                channel:SendAsync(msg)
+            end
+        end
+
+        -- listener (responde e detecta)
+        if TextChatService.ChatVersion == Enum.ChatVersion.TextChatService then
+            TextChatService.OnIncomingMessage = function(message)
+                if not message or not message.Text then return end
+
+                local text = message.Text
+                local sender = message.TextSource
+
+                if sender and sender.UserId == LocalPlayer.UserId then return end
+
+                -- responde ao comando
+                if text == ";OPA" then
+                    task.wait(0.2)
+                    sendMessage("tô aqui!")
+                end
+
+                -- detecta resposta
+                if verifying and text == "tô aqui!" then
+                    print("Usuário com hub:", sender.Name)
+                end
+            end
+        end
+
+        -- envia o comando
+        sendMessage(";OPA")
+
+        -- tempo de verificação
+        task.delay(5, function()
+            verifying = false
+            print("Verificação finalizada")
+        end)
+    end
+})
