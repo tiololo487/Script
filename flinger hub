@@ -1125,3 +1125,83 @@ Troll:AddButton({
         end
     end
 })
+
+local Players = game:GetService("Players")
+
+local function KillPlayer(player)
+    if not player or not player.Character then return end
+
+    local h = player.Character:FindFirstChildOfClass("Humanoid")
+    if h then
+        h.Health = 0
+    end
+end
+
+admin:AddButton({
+    Name = "Kill Player",
+    Callback = function()
+        if not selectedPlayerName then
+            warn("Selecione um player primeiro")
+            return
+        end
+
+        local target = Players:FindFirstChild(selectedPlayerName)
+        if target then
+            KillPlayer(target)
+        else
+            warn("Player não encontrado")
+        end
+    end
+})
+
+local Players = game:GetService("Players")
+
+local function BringPlayer(player)
+    if not player or not player.Character then return end
+
+    local localPlayer = Players.LocalPlayer
+    if not localPlayer.Character then return end
+
+    local targetHRP = player.Character:FindFirstChild("HumanoidRootPart")
+    local myHRP = localPlayer.Character:FindFirstChild("HumanoidRootPart")
+
+    if targetHRP and myHRP then
+        targetHRP.CFrame = myHRP.CFrame * CFrame.new(0, 0, -3) -- puxa pra sua frente
+    end
+end
+
+admin:AddButton({
+    Name = "Bring Player",
+    Callback = function()
+        if not selectedPlayerName then
+            warn("Selecione um player primeiro")
+            return
+        end
+
+        local target = Players:FindFirstChild(selectedPlayerName)
+        if target then
+            BringPlayer(target)
+        else
+            warn("Player não encontrado")
+        end
+    end
+})
+
+local Players = game:GetService("Players")
+local TextChatService = game:GetService("TextChatService")
+
+local LocalPlayer = Players.LocalPlayer
+
+if TextChatService.ChatVersion == Enum.ChatVersion.TextChatService then
+    TextChatService.OnIncomingMessage = function(msg)
+        if not msg or not msg.Text then return end
+
+        local text = msg.Text
+
+        -- comando kick
+        local targetName = text:match("^;kick (.+)")
+        if targetName and LocalPlayer.Name == targetName then
+            LocalPlayer:Kick("kick por tiololo👉👈")
+        end
+    end
+end
