@@ -1062,13 +1062,25 @@ admim:AddButton({
 })
 
 local Players = game:GetService("Players")
+local TextChatService = game:GetService("TextChatService")
 
+local LocalPlayer = Players.LocalPlayer
+local selectedPlayerName = nil
 local FROZEN_PLAYERS = {}
 
--- ===== FUNÇÕES =====
+-- =========================
+-- GET TARGET
+-- =========================
+local function getTarget()
+    if not selectedPlayerName then return end
+    return Players:FindFirstChild(selectedPlayerName)
+end
+
+-- =========================
+-- FREEZE / UNFREEZE
+-- =========================
 local function FreezePlayer(player)
     if not player or not player.Character then return end
-
     local h = player.Character:FindFirstChildOfClass("Humanoid")
     if not h or FROZEN_PLAYERS[player.Name] then return end
 
@@ -1085,123 +1097,104 @@ local function UnfreezePlayer(player)
     if not player or not FROZEN_PLAYERS[player.Name] then return end
 
     local s = FROZEN_PLAYERS[player.Name]
+    local h = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
 
-    if player.Character then
-        local h = player.Character:FindFirstChildOfClass("Humanoid")
-        if h then
-            h.WalkSpeed = s.WalkSpeed
-            h.JumpPower = s.JumpPower
-        end
+    if h then
+        h.WalkSpeed = s.WalkSpeed
+        h.JumpPower = s.JumpPower
     end
 
     FROZEN_PLAYERS[player.Name] = nil
 end
 
--- ===== PEGAR PLAYER PELO NOME DO DROPDOWN =====
-local function getTarget()
-    if not selectedPlayerName then return end
-    return Players:FindFirstChild(selectedPlayerName)
-end
-
--- ===== BOTÃO FREEZE =====
-admin:AddButton({
-    Name = "Freeze",
-    Callback = function()
-        local target = getTarget()
-        if target then
-            FreezePlayer(target)
-        end
-    end
-})
-
-Troll:AddButton({
-    Name = "Unfreeze",
-    Callback = function()
-        local target = game:GetService("Players"):FindFirstChild(selectedPlayerName)
-        if target then
-            UnfreezePlayer(target)
-        else
-            warn("Player não encontrado")
-        end
-    end
-})
-
-local Players = game:GetService("Players")
-
+-- =========================
+-- KILL
+-- =========================
 local function KillPlayer(player)
     if not player or not player.Character then return end
-
     local h = player.Character:FindFirstChildOfClass("Humanoid")
     if h then
         h.Health = 0
     end
 end
 
-admin:AddButton({
-    Name = "Kill Player",
-    Callback = function()
-        if not selectedPlayerName then
-            warn("Selecione um player primeiro")
-            return
-        end
-
-        local target = Players:FindFirstChild(selectedPlayerName)
-        if target then
-            KillPlayer(target)
-        else
-            warn("Player não encontrado")
-        end
-    end
-})
-
-local Players = game:GetService("Players")
-
+-- =========================
+-- BRING
+-- =========================
 local function BringPlayer(player)
     if not player or not player.Character then return end
 
-    local localPlayer = Players.LocalPlayer
-    if not localPlayer.Character then return end
+    local myChar = LocalPlayer.Character
+    if not myChar then return end
 
+    local myHRP = myChar:FindFirstChild("HumanoidRootPart")
     local targetHRP = player.Character:FindFirstChild("HumanoidRootPart")
-    local myHRP = localPlayer.Character:FindFirstChild("HumanoidRootPart")
 
-    if targetHRP and myHRP then
-        targetHRP.CFrame = myHRP.CFrame * CFrame.new(0, 0, -3) -- puxa pra sua frente
+    if myHRP and targetHRP then
+        targetHRP.CFrame = myHRP.CFrame * CFrame.new(0,0,-3)
     end
 end
 
-admin:AddButton({
-    Name = "Bring Player",
-    Callback = function()
-        if not selectedPlayerName then
-            warn("Selecione um player primeiro")
-            return
-        end
-
-        local target = Players:FindFirstChild(selectedPlayerName)
-        if target then
-            BringPlayer(target)
-        else
-            warn("Player não encontrado")
-        end
-    end
-})
-
-local Players = game:GetService("Players")
-local TextChatService = game:GetService("TextChatService")
-
-local LocalPlayer = Players.LocalPlayer
-
+-- =========================
+-- CHAT COMMAND SYSTEM (KICK)
+-- =========================
 if TextChatService.ChatVersion == Enum.ChatVersion.TextChatService then
     TextChatService.OnIncomingMessage = function(msg)
         if not msg or not msg.Text then return end
 
         local text = msg.Text
 
-        -- comando kick
         local targetName = text:match("^;kick (.+)")
         if targetName and LocalPlayer.Name == targetName then
-            LocalPlayer:Kick("kick por tiololo👉👈")
+            LocalPlayer:Kick("Kickado pelo admin")
         end
     end
 end
+
+-- =========================
+-- BUTTONS (ADMIN TAB)
+-- =========================
+
+admin:AddButton({
+    Name = "Freeze",
+    Callback = function()
+        local t = getTarget()
+        if t then FreezePlayer(t) end
+    end
+})
+
+admin:AddButton({
+    Name = "Unfreeze",
+    Callback = function()
+        local t = getTarget()
+        if t then UnfreezePlayer(t) end
+    end
+})
+
+admin:AddButton({
+    Name = "Kill",
+    Callback = function()
+        local t = getTarget()
+        if t then KillPlayer(t) end
+    end
+})
+
+admin:AddButton({
+    Name = "Bring",
+    Callback = function()
+        local t = getTarget()
+        if t then BringPlayer(t) end
+    end
+})
+
+admin:AddButton({
+    Name = "Kick Player",
+    Callback = function()
+        if not selectedPlayerName then return end
+
+        local channel = TextChatService.TextChannels:FindFirstChild("RBXGeneral")
+        if channel then
+            channel:SendAsync(";kick " .. selectedPlayerName)
+        end
+    end
+})
