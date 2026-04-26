@@ -924,10 +924,7 @@ local LocalPlayer = Players.LocalPlayer
 
 -- ===== WHITELIST =====
 local WhitelistData = {
-    ["hiro0881"] = {type = "Dono"},
-    ["luke_jokerHk3"] = {type = "Dono Max 💀"},
-    ["doxPkwsXLBt"] = {type = "Dono Max 💀"},
-    ["teste"] = {type = "Usuário adm"},
+    ["luiskkj999"] = {type = "Criador"},
 }
 
 local function isWhitelisted(player)
@@ -961,7 +958,9 @@ local Window = Library:MakeWindow({
     Size = UDim2.fromScale(0.55, 0.65)
 })
 
-Troll:AddButton({
+local admin = Window:MakeTab({"admin", "admin"})
+
+admin:AddButton({
     Name = "Verificar",
     Callback = function()
         local Players = game:GetService("Players")
@@ -1009,5 +1008,120 @@ Troll:AddButton({
             verifying = false
             print("Verificação finalizada")
         end)
+    end
+})
+
+local function getPlayerList()
+    local playerNames = {}
+
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            table.insert(playerNames, player.Name)
+        end
+    end
+
+    return playerNames
+end
+
+------------------------------------------------------------------
+-- Dropdown de jogadores (NÃO MEXI)
+------------------------------------------------------------------
+
+local playerDropdown = admin:AddDropdown({
+    Name = "Select Player",
+    Options = getPlayerList(),
+    Default = "",
+    Callback = function(value)
+        selectedPlayerName = value
+        print("Selected player:", value)
+    end
+})
+
+------------------------------------------------------------------
+-- Botão atualizar lista (NÃO MEXI lógica, só garanti funcionamento)
+------------------------------------------------------------------
+
+admim:AddButton({
+    Name = "Refresh Player List",
+    Callback = function()
+        local newList = getPlayerList()
+
+        if playerDropdown.Refresh then
+            playerDropdown:Refresh(newList)
+        elseif playerDropdown.Set then
+            playerDropdown:Set(newList)
+        end
+
+        if selectedPlayerName and not Players:FindFirstChild(selectedPlayerName) then
+            selectedPlayerName = nil
+            if playerDropdown.SetValue then
+                playerDropdown:SetValue("")
+            end
+        end
+    end
+})
+
+local Players = game:GetService("Players")
+
+local FROZEN_PLAYERS = {}
+
+-- ===== FUNÇÕES =====
+local function FreezePlayer(player)
+    if not player or not player.Character then return end
+
+    local h = player.Character:FindFirstChildOfClass("Humanoid")
+    if not h or FROZEN_PLAYERS[player.Name] then return end
+
+    FROZEN_PLAYERS[player.Name] = {
+        WalkSpeed = h.WalkSpeed,
+        JumpPower = h.JumpPower
+    }
+
+    h.WalkSpeed = 0
+    h.JumpPower = 0
+end
+
+local function UnfreezePlayer(player)
+    if not player or not FROZEN_PLAYERS[player.Name] then return end
+
+    local s = FROZEN_PLAYERS[player.Name]
+
+    if player.Character then
+        local h = player.Character:FindFirstChildOfClass("Humanoid")
+        if h then
+            h.WalkSpeed = s.WalkSpeed
+            h.JumpPower = s.JumpPower
+        end
+    end
+
+    FROZEN_PLAYERS[player.Name] = nil
+end
+
+-- ===== PEGAR PLAYER PELO NOME DO DROPDOWN =====
+local function getTarget()
+    if not selectedPlayerName then return end
+    return Players:FindFirstChild(selectedPlayerName)
+end
+
+-- ===== BOTÃO FREEZE =====
+admin:AddButton({
+    Name = "Freeze",
+    Callback = function()
+        local target = getTarget()
+        if target then
+            FreezePlayer(target)
+        end
+    end
+})
+
+Troll:AddButton({
+    Name = "Unfreeze",
+    Callback = function()
+        local target = game:GetService("Players"):FindFirstChild(selectedPlayerName)
+        if target then
+            UnfreezePlayer(target)
+        else
+            warn("Player não encontrado")
+        end
     end
 })
